@@ -45,19 +45,22 @@ export interface MenuOverlayProps {
   open: boolean;
   currentPack: string;
   currentLevelId: string;
-  /** Called when the user taps Close/Back. If undefined, no back button shown. */
+  coins?: number;
   onClose?: () => void;
   onSelectLevel: (level: LevelConfig) => void;
   onSelectPack: (packName: string) => void;
+  onOpenStore?: () => void;
 }
 
 export function MenuOverlay({
   open,
   currentPack,
   currentLevelId,
+  coins = 0,
   onClose,
   onSelectLevel,
   onSelectPack,
+  onOpenStore,
 }: MenuOverlayProps) {
   if (!open) return null;
 
@@ -98,8 +101,19 @@ export function MenuOverlay({
           <span className="mo-brand-name">FLOWLINE</span>
         </div>
 
-        {/* Spacer to balance the grid */}
-        <div className="mo-topbar-end" aria-hidden />
+        {/* Coin balance + store button */}
+        <button
+          type="button"
+          className="mo-store-btn"
+          onClick={onOpenStore}
+          aria-label={`${coins} coins — open store`}
+        >
+          <svg viewBox="0 0 20 20" fill="none" width="16" height="16" aria-hidden>
+            <circle cx="10" cy="10" r="9" fill="#FFD700" stroke="#B8860B" strokeWidth="1.1"/>
+            <text x="10" y="14" textAnchor="middle" fontSize="9" fontWeight="700" fill="#7B5200">₣</text>
+          </svg>
+          <span>{coins}</span>
+        </button>
       </header>
 
       {/* ── Hero banner ────────────────────────────────────────────── */}

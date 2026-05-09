@@ -1260,213 +1260,288 @@
   text-underline-offset: 3px;
 }
 
-/* ─── SOLVE BOTTOM SHEET ─────────────────────────────────────────────────── */
+/* ─── CANVAS FAIL SHAKE ──────────────────────────────────────────────────── */
 
-/* Backdrop */
-.solve-sheet__backdrop {
+@keyframes canvas-shake {
+  0%,100% { transform: translateX(0); }
+  15%     { transform: translateX(-10px) rotate(-1.5deg); }
+  30%     { transform: translateX(9px)  rotate(1.2deg); }
+  45%     { transform: translateX(-7px) rotate(-0.8deg); }
+  60%     { transform: translateX(6px)  rotate(0.5deg); }
+  75%     { transform: translateX(-4px); }
+  88%     { transform: translateX(2px); }
+}
+
+.canvas-shake {
+  animation: canvas-shake 0.55s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+/* ─── WIN BOTTOM SHEET ───────────────────────────────────────────────────── */
+
+/* Dark backdrop */
+.win-backdrop {
   position: fixed;
   inset: 0;
   z-index: 190;
-  background: rgba(0, 0, 0, 0);
-  transition: background 0.35s ease;
+  background: rgba(0,0,0,0);
   pointer-events: none;
+  transition: background 0.38s ease;
 }
-
-.solve-sheet__backdrop--visible {
-  background: rgba(0, 0, 0, 0.65);
+.win-backdrop--in {
+  background: rgba(0,0,0,0.72);
   pointer-events: auto;
 }
 
-/* Confetti canvas wrapper — sits above backdrop, below sheet */
-.solve-sheet__confetti-wrap {
+/* Bottom sheet */
+.win-sheet {
   position: fixed;
-  inset: 0;
-  z-index: 195;
-  pointer-events: none;
-  overflow: hidden;
-}
-
-.solve-sheet__confetti {
-  width: 100%;
-  height: 100%;
-  display: block;
-}
-
-/* The sheet itself */
-.solve-sheet {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  left: 0; right: 0; bottom: 0;
   z-index: 200;
+  border-radius: 28px 28px 0 0;
   background:
-    radial-gradient(circle at 50% 0%, rgba(46, 204, 113, 0.14), transparent 48%),
-    var(--surface-2);
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 24px 24px 0 0;
-  padding: 0 20px 0;
-
-  /* Start off-screen below */
-  transform: translateY(100%);
-  transition: transform 0.42s cubic-bezier(0.32, 1.4, 0.58, 1); /* spring overshoot */
-
-  /* Box shadow for depth */
+    radial-gradient(ellipse 80% 40% at 50% 0%, color-mix(in srgb, var(--win-accent,#2ECC71) 22%, transparent), transparent 55%),
+    #0d0d16;
+  border-top: 1px solid rgba(255,255,255,0.1);
   box-shadow:
-    0 -8px 40px rgba(0, 0, 0, 0.6),
-    0 -1px 0 rgba(255, 255, 255, 0.06);
+    0 -12px 60px rgba(0,0,0,0.7),
+    0 -1px 0 rgba(255,255,255,0.07);
+  padding: 0 20px;
+  transform: translateY(105%);
+  /* Spring overshoot */
+  transition: transform 0.46s cubic-bezier(0.28, 1.55, 0.55, 1);
+  will-change: transform;
 }
 
-.solve-sheet--visible {
+.win-sheet--in {
   transform: translateY(0);
 }
 
-/* Drag handle pill */
-.solve-sheet__handle {
-  width: 36px;
-  height: 4px;
+/* Glowing accent line at top */
+.win-accent-line {
+  position: absolute;
+  top: 0; left: 20%; right: 20%;
+  height: 2px;
+  border-radius: 0 0 4px 4px;
+  background: var(--win-accent, #2ECC71);
+  box-shadow: 0 0 24px 4px var(--win-accent, #2ECC71);
+  opacity: 0.9;
+}
+
+/* Drag handle */
+.win-handle {
+  width: 38px; height: 4px;
   border-radius: 2px;
-  background: rgba(255, 255, 255, 0.18);
-  margin: 12px auto 20px;
+  background: rgba(255,255,255,0.16);
+  margin: 14px auto 0;
 }
 
-/* Header: badge + stars */
-.solve-sheet__header {
+/* Heading row: trophy + text */
+.win-heading-row {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 24px;
+  gap: 16px;
+  margin: 18px 0 12px;
 }
 
-.solve-sheet__badge-art {
-  width: min(260px, 82vw);
-  height: auto;
-  margin-top: -6px;
-  filter: drop-shadow(0 0 28px rgba(46, 204, 113, 0.26));
-}
-
-/* SOLVED badge */
-.solve-sheet__badge {
-  font-family: var(--mono);
-  font-size: 22px;
-  font-weight: 700;
-  letter-spacing: 0.45em;
-  color: var(--win);
-  text-shadow: 0 0 20px rgba(46, 204, 113, 0.6);
-  animation: solve-badge-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-}
-
-@keyframes solve-badge-pop {
-  0%   { opacity: 0; transform: scale(0.6); }
-  100% { opacity: 1; transform: scale(1); }
-}
-
-/* Stars */
-.solve-sheet__stars {
-  display: flex;
-  gap: 8px;
-  font-size: 32px;
+.win-trophy {
+  font-size: 52px;
   line-height: 1;
+  animation: trophy-bounce 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.1s both;
+  filter: drop-shadow(0 4px 16px rgba(0,0,0,0.4));
 }
 
-.solve-sheet__star {
-  display: inline-block;
-  animation: star-drop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+@keyframes trophy-bounce {
+  0%   { opacity: 0; transform: scale(0.4) rotate(-15deg); }
+  60%  { transform: scale(1.12) rotate(4deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0deg); }
 }
 
-.solve-sheet__star--on {
-  color: #FFD700;
-  filter: drop-shadow(0 0 8px #FFD70099);
-}
-
-.solve-sheet__star--off {
-  color: var(--stroke);
-}
-
-@keyframes star-drop {
-  0%   { opacity: 0; transform: translateY(-24px) scale(0.5); }
-  100% { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-/* Stats */
-.solve-sheet__stats {
-  background: var(--surface);
-  border: 1px solid var(--stroke);
-  border-radius: 14px;
-  padding: 4px 0;
-  margin-bottom: 20px;
-}
-
-.solve-sheet__stat {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--stroke);
-}
-
-.solve-sheet__stat:last-child {
-  border-bottom: none;
-}
-
-.solve-sheet__stat-label {
+.win-eyebrow {
+  margin: 0 0 2px;
   font-family: var(--mono);
   font-size: 11px;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.22em;
   color: var(--muted);
 }
 
-.solve-sheet__stat-value {
+.win-title {
+  margin: 0;
   font-family: var(--mono);
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--text);
+  font-size: clamp(22px, 6vw, 32px);
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  line-height: 1;
+  text-shadow: 0 0 24px currentColor;
+  animation: win-title-in 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.2s both;
 }
 
-.solve-sheet__stat-sub {
+@keyframes win-title-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Stars */
+.win-stars {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.win-star {
+  font-size: 36px;
+  line-height: 1;
+  display: inline-block;
+  animation: win-star-pop 0.5s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+
+.win-star--on {
+  color: #FFD700;
+  filter: drop-shadow(0 0 10px #FFD700cc);
+}
+
+.win-star--dim {
+  color: rgba(255,255,255,0.1);
+}
+
+@keyframes win-star-pop {
+  0%   { opacity:0; transform: scale(0.3) rotate(-30deg); }
+  70%  { transform: scale(1.15) rotate(5deg); }
+  100% { opacity:1; transform: scale(1) rotate(0); }
+}
+
+/* Coin badge */
+.win-coins {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+  background: rgba(255,215,0,0.1);
+  border: 1px solid rgba(255,215,0,0.3);
+  border-radius: 12px;
+  padding: 10px 16px;
+  margin-bottom: 16px;
+  animation: win-coins-in 0.45s cubic-bezier(0.34,1.56,0.64,1) 0.5s both;
+}
+
+@keyframes win-coins-in {
+  from { opacity:0; transform: scale(0.8); }
+  to   { opacity:1; transform: scale(1); }
+}
+
+.win-coins__label {
+  font-family: var(--mono);
+  font-size: 20px;
+  font-weight: 700;
+  color: #FFD700;
+}
+
+.win-coins__sub {
+  font-family: var(--mono);
   font-size: 11px;
-  font-weight: 400;
-  color: var(--accent);
+  letter-spacing: 0.1em;
+  color: rgba(255,215,0,0.7);
+}
+
+/* Stats grid */
+.win-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.win-stat {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 14px;
+  padding: 12px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  position: relative;
+}
+
+.win-stat__label {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  color: var(--muted);
+}
+
+.win-stat__val {
+  font-family: var(--mono);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1;
+}
+
+.win-stat__badge {
+  position: absolute;
+  top: -6px; right: -4px;
+  background: #2ECC71;
+  color: #05100a;
+  font-family: var(--mono);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  padding: 2px 5px;
+  border-radius: 6px;
 }
 
 /* Action buttons */
-.solve-sheet__actions {
+.win-actions {
   display: flex;
   flex-direction: column;
   gap: 10px;
   margin-bottom: 12px;
 }
 
-.solve-sheet__btn {
+.win-btn {
   width: 100%;
-  padding: 16px;
-  border-radius: 14px;
+  padding: 17px 16px;
+  border-radius: 16px;
   border: none;
   font-family: var(--mono);
   font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.2em;
+  font-weight: 700;
+  letter-spacing: 0.22em;
   cursor: pointer;
-  transition: transform 0.1s ease, opacity 0.1s ease;
+  transition: transform 0.1s ease, opacity 0.12s;
 }
 
-.solve-sheet__btn:active {
-  transform: scale(0.97);
-  opacity: 0.85;
+.win-btn:active { transform: scale(0.96); opacity: 0.88; }
+
+.win-btn--primary {
+  background: var(--win-accent, #2ECC71);
+  color: #04100a;
+  box-shadow: 0 4px 24px color-mix(in srgb, var(--win-accent,#2ECC71) 50%, transparent);
 }
 
-.solve-sheet__btn--primary {
-  background: var(--win);
-  color: #05100a;
-}
-
-.solve-sheet__btn--ghost {
-  background: var(--surface);
+.win-btn--ghost {
+  background: rgba(255,255,255,0.05);
   color: var(--muted);
-  border: 1px solid var(--stroke);
+  border: 1px solid rgba(255,255,255,0.1);
 }
 
-/* iOS safe area bottom spacer */
-.solve-sheet__safe {
-  height: max(12px, env(safe-area-inset-bottom, 0));
+/* Coin banner in solve sheet (legacy compat) */
+.solve-sheet__coins-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+  background: rgba(255,215,0,0.1);
+  border: 1px solid rgba(255,215,0,0.25);
+  border-radius: 12px;
+  padding: 10px 16px;
+  margin-bottom: 14px;
+}
+
+.solve-sheet__coins-text {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 600;
+  color: #FFD700;
 }
