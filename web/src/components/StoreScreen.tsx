@@ -9,6 +9,7 @@ import {
 } from '../game/storage';
 import logoMarkUrl from '../assets/game-assets/flowline-logo-mark.svg';
 import neonPanelUrl from '../assets/game-assets/flowline-neon-bg-panel.png';
+import { StoreIcon } from './StoreIcon';
 
 // ── Coin icon ─────────────────────────────────────────────────────────────────
 
@@ -34,7 +35,17 @@ interface ToastState { msg: string; ok: boolean; id: number }
 function Toast({ toast }: { toast: ToastState }) {
   return (
     <div className={`st-toast ${toast.ok ? 'st-toast--ok' : 'st-toast--err'}`} role="status" aria-live="polite">
-      <span className="st-toast-icon">{toast.ok ? '✓' : '✗'}</span>
+      <span className="st-toast-icon">
+        {toast.ok ? (
+          <svg viewBox="0 0 16 16" fill="none" width="16" height="16">
+            <path d="M13 4L6 11 3 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        ) : (
+          <svg viewBox="0 0 16 16" fill="none" width="16" height="16">
+            <path d="M12 4L4 12M4 4l8 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+          </svg>
+        )}
+      </span>
       <span>{toast.msg}</span>
     </div>
   );
@@ -93,7 +104,7 @@ function ItemCard({
 
       {/* Preview area */}
       <div className="st-card-preview" aria-hidden>
-        <span className="st-card-emoji">{item.preview.emoji}</span>
+        <StoreIcon name={item.preview.icon} className="st-card-icon" />
         {/* Mini accent dots decoration */}
         <div className="st-card-dots" aria-hidden>
           {[...Array(3)].map((_, i) => (
@@ -151,7 +162,7 @@ function EarnGuide({ onClose }: { onClose: () => void }) {
         <div className="st-earn-rows">
           {EARN_GUIDE.map((g) => (
             <div key={g.label} className="st-earn-row">
-              <span className="st-earn-emoji">{g.emoji}</span>
+              <StoreIcon name={g.icon} className="st-earn-icon" />
               <span className="st-earn-label">{g.label}</span>
               <span className="st-earn-amount">
                 {typeof g.coins === 'number' ? (
@@ -194,7 +205,7 @@ function ConfirmSheet({
 
         {/* Item preview */}
         <div className="st-confirm-preview" aria-hidden>
-          <span className="st-confirm-emoji">{item.preview.emoji}</span>
+          <StoreIcon name={item.preview.icon} className="st-confirm-icon" />
         </div>
 
         <h3 className="st-confirm-name">{item.name}</h3>
@@ -377,7 +388,7 @@ export function StoreScreen({ onClose }: StoreScreenProps) {
               style={{ '--ta': m.accent } as CSSProperties}
               onClick={() => setActiveCategory(cat)}
             >
-              <span className="st-tab-em">{m.emoji}</span>
+              <StoreIcon name={m.icon} className="st-tab-icon" />
               <span className="st-tab-label">{m.label}</span>
             </button>
           );
@@ -389,7 +400,7 @@ export function StoreScreen({ onClose }: StoreScreenProps) {
         className="st-cat-head"
         style={{ '--ca': activeMeta.accent } as CSSProperties}
       >
-        <span className="st-cat-em">{activeMeta.emoji}</span>
+        <StoreIcon name={activeMeta.icon} className="st-cat-icon" />
         <span className="st-cat-name">{activeMeta.label}</span>
         <span className="st-cat-count">{items.length} items</span>
       </div>

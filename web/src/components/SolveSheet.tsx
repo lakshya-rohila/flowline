@@ -170,7 +170,9 @@ function AnimatedStars({ count }: { count: number }) {
           style={{ animationDelay: `${0.3 + (i - 1) * 0.18}s` }}
           aria-hidden
         >
-          ★
+          <svg viewBox="0 0 24 24" fill="currentColor" width="100%" height="100%">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+          </svg>
         </span>
       ))}
     </div>
@@ -243,7 +245,6 @@ export function SolveSheet({
   const timeStr   = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
   const isBest    = !prev || moves <= prev.moves;
 
-  const starLabels = ['', '⭐', '⭐⭐', '⭐⭐⭐'];
   const headings   = ['', 'GOOD JOB', 'GREAT!', 'PERFECT!'];
   const colors     = ['', '#FFD700', '#2ECC71', '#5EEAD4'];
 
@@ -276,10 +277,25 @@ export function SolveSheet({
         {/* ── Trophy / heading ── */}
         <div className="win-heading-row">
           <div className="win-trophy" aria-hidden>
-            {stars === 3 ? '🏆' : stars === 2 ? '🥈' : '🥉'}
+            {stars === 3 ? (
+              <svg viewBox="0 0 48 48" fill="none" width="48" height="48">
+                <path d="M24 4L28 16H40L30 24L34 36L24 28L14 36L18 24L8 16H20L24 4Z" fill="#FFD700" stroke="#B8860B" strokeWidth="2"/>
+                <path d="M18 36L16 42H32L30 36" stroke="#B8860B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <rect x="14" y="42" width="20" height="2" rx="1" fill="#B8860B"/>
+              </svg>
+            ) : stars === 2 ? (
+              <svg viewBox="0 0 48 48" fill="none" width="48" height="48">
+                <circle cx="24" cy="22" r="14" fill="#C0C0C0" stroke="#9E9E9E" strokeWidth="2"/>
+                <text x="24" y="28" textAnchor="middle" fontSize="18" fontWeight="700" fill="#666">2</text>
+              </svg>
+            ) : (
+              <svg viewBox="0 0 48 48" fill="none" width="48" height="48">
+                <circle cx="24" cy="22" r="14" fill="#CD7F32" stroke="#8B5A2B" strokeWidth="2"/>
+                <text x="24" y="28" textAnchor="middle" fontSize="18" fontWeight="700" fill="#5C3317">3</text>
+              </svg>
+            )}
           </div>
           <div>
-            <p className="win-eyebrow">{starLabels[stars]}</p>
             <h2 className="win-title" style={{ color: colors[stars] }}>
               {headings[stars]}
             </h2>

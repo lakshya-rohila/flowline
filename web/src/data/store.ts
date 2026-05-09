@@ -12,7 +12,7 @@ export interface StoreItem {
   isConsumable: boolean;  // consumables are bought many times (hints, undos)
   quantity?: number;      // for consumables: how many you get
   preview: {
-    emoji: string;        // displayed in card
+    icon: string;         // icon identifier
     accent: string;       // card accent color
     gradient: [string, string]; // card background gradient
   };
@@ -31,7 +31,7 @@ export const STORE_ITEMS: StoreItem[] = [
     price: 0,
     isFree: true,
     isConsumable: false,
-    preview: { emoji: '🌑', accent: '#5EEAD4', gradient: ['#0b0b12', '#101018'] },
+    preview: { icon: 'moon', accent: '#5EEAD4', gradient: ['#0b0b12', '#101018'] },
   },
   {
     id: 'theme_aurora',
@@ -41,7 +41,7 @@ export const STORE_ITEMS: StoreItem[] = [
     price: 120,
     isFree: false,
     isConsumable: false,
-    preview: { emoji: '🌌', accent: '#A855F7', gradient: ['#1a0533', '#0d2438'] },
+    preview: { icon: 'stars', accent: '#A855F7', gradient: ['#1a0533', '#0d2438'] },
     badge: 'HOT',
   },
   {
@@ -52,7 +52,7 @@ export const STORE_ITEMS: StoreItem[] = [
     price: 120,
     isFree: false,
     isConsumable: false,
-    preview: { emoji: '🌅', accent: '#FF8C00', gradient: ['#2d0a00', '#1a0d12'] },
+    preview: { icon: 'sunset', accent: '#FF8C00', gradient: ['#2d0a00', '#1a0d12'] },
   },
   {
     id: 'theme_ocean',
@@ -62,7 +62,7 @@ export const STORE_ITEMS: StoreItem[] = [
     price: 120,
     isFree: false,
     isConsumable: false,
-    preview: { emoji: '🌊', accent: '#00CED1', gradient: ['#001428', '#001e2e'] },
+    preview: { icon: 'waves', accent: '#00CED1', gradient: ['#001428', '#001e2e'] },
   },
   {
     id: 'theme_forest',
@@ -72,7 +72,7 @@ export const STORE_ITEMS: StoreItem[] = [
     price: 150,
     isFree: false,
     isConsumable: false,
-    preview: { emoji: '🌿', accent: '#2ECC71', gradient: ['#051a0a', '#0a1f0e'] },
+    preview: { icon: 'leaf', accent: '#2ECC71', gradient: ['#051a0a', '#0a1f0e'] },
     badge: 'NEW',
   },
   {
@@ -83,7 +83,7 @@ export const STORE_ITEMS: StoreItem[] = [
     price: 200,
     isFree: false,
     isConsumable: false,
-    preview: { emoji: '🌃', accent: '#FF3B3B', gradient: ['#000000', '#0a000a'] },
+    preview: { icon: 'city', accent: '#FF3B3B', gradient: ['#000000', '#0a000a'] },
   },
 
   // ── HINTS ──────────────────────────────────────────────────────────────────
@@ -97,7 +97,7 @@ export const STORE_ITEMS: StoreItem[] = [
     isFree: false,
     isConsumable: true,
     quantity: 3,
-    preview: { emoji: '💡', accent: '#FFD700', gradient: ['#1a1300', '#1c1600'] },
+    preview: { icon: 'lightbulb', accent: '#FFD700', gradient: ['#1a1300', '#1c1600'] },
   },
   {
     id: 'hints_10',
@@ -108,7 +108,7 @@ export const STORE_ITEMS: StoreItem[] = [
     isFree: false,
     isConsumable: true,
     quantity: 10,
-    preview: { emoji: '💡', accent: '#FFD700', gradient: ['#1a1300', '#1c1600'] },
+    preview: { icon: 'lightbulb', accent: '#FFD700', gradient: ['#1a1300', '#1c1600'] },
     badge: 'BEST',
   },
   {
@@ -120,7 +120,7 @@ export const STORE_ITEMS: StoreItem[] = [
     isFree: false,
     isConsumable: true,
     quantity: 999,
-    preview: { emoji: '🔓', accent: '#FFD700', gradient: ['#1a1300', '#1c1600'] },
+    preview: { icon: 'unlock', accent: '#FFD700', gradient: ['#1a1300', '#1c1600'] },
   },
 
   // ── POWER-UPS ──────────────────────────────────────────────────────────────
@@ -134,7 +134,7 @@ export const STORE_ITEMS: StoreItem[] = [
     isFree: false,
     isConsumable: true,
     quantity: 1,
-    preview: { emoji: '⚡', accent: '#A855F7', gradient: ['#1a0033', '#0d0020'] },
+    preview: { icon: 'zap', accent: '#A855F7', gradient: ['#1a0033', '#0d0020'] },
     badge: 'NEW',
   },
   {
@@ -146,7 +146,7 @@ export const STORE_ITEMS: StoreItem[] = [
     isFree: false,
     isConsumable: true,
     quantity: 1,
-    preview: { emoji: '↩️', accent: '#3B9EFF', gradient: ['#001428', '#001020'] },
+    preview: { icon: 'undo', accent: '#3B9EFF', gradient: ['#001428', '#001020'] },
   },
   {
     id: 'powerup_reveal_path',
@@ -157,7 +157,7 @@ export const STORE_ITEMS: StoreItem[] = [
     isFree: false,
     isConsumable: true,
     quantity: 1,
-    preview: { emoji: '👁️', accent: '#5EEAD4', gradient: ['#001a18', '#001412'] },
+    preview: { icon: 'eye', accent: '#5EEAD4', gradient: ['#001a18', '#001412'] },
   },
   {
     id: 'powerup_skip_level',
@@ -168,7 +168,7 @@ export const STORE_ITEMS: StoreItem[] = [
     isFree: false,
     isConsumable: true,
     quantity: 1,
-    preview: { emoji: '⏭️', accent: '#FF69B4', gradient: ['#1a0010', '#120008'] },
+    preview: { icon: 'skip', accent: '#FF69B4', gradient: ['#1a0010', '#120008'] },
   },
 
   // ── COSMETICS ──────────────────────────────────────────────────────────────
@@ -181,7 +181,7 @@ export const STORE_ITEMS: StoreItem[] = [
     price: 0,
     isFree: true,
     isConsumable: false,
-    preview: { emoji: '〰️', accent: '#6b7280', gradient: ['#0b0b12', '#101018'] },
+    preview: { icon: 'minus', accent: '#6b7280', gradient: ['#0b0b12', '#101018'] },
   },
   {
     id: 'cosmetic_pipe_thick',
@@ -191,7 +191,7 @@ export const STORE_ITEMS: StoreItem[] = [
     price: 80,
     isFree: false,
     isConsumable: false,
-    preview: { emoji: '🟢', accent: '#2ECC71', gradient: ['#051a0a', '#0a1f0e'] },
+    preview: { icon: 'circle', accent: '#2ECC71', gradient: ['#051a0a', '#0a1f0e'] },
   },
   {
     id: 'cosmetic_grid_dots',
@@ -201,7 +201,7 @@ export const STORE_ITEMS: StoreItem[] = [
     price: 60,
     isFree: false,
     isConsumable: false,
-    preview: { emoji: '⣿', accent: '#5EEAD4', gradient: ['#0b0b12', '#101018'] },
+    preview: { icon: 'grid', accent: '#5EEAD4', gradient: ['#0b0b12', '#101018'] },
   },
   {
     id: 'cosmetic_confetti_rainbow',
@@ -211,7 +211,7 @@ export const STORE_ITEMS: StoreItem[] = [
     price: 100,
     isFree: false,
     isConsumable: false,
-    preview: { emoji: '🎊', accent: '#FF69B4', gradient: ['#1a0010', '#120008'] },
+    preview: { icon: 'sparkles', accent: '#FF69B4', gradient: ['#1a0010', '#120008'] },
     badge: 'HOT',
   },
   {
@@ -222,7 +222,7 @@ export const STORE_ITEMS: StoreItem[] = [
     price: 90,
     isFree: false,
     isConsumable: false,
-    preview: { emoji: '🎮', accent: '#FFD700', gradient: ['#1a1300', '#1c1600'] },
+    preview: { icon: 'gamepad', accent: '#FFD700', gradient: ['#1a1300', '#1c1600'] },
   },
   {
     id: 'cosmetic_sound_chill',
@@ -232,15 +232,15 @@ export const STORE_ITEMS: StoreItem[] = [
     price: 90,
     isFree: false,
     isConsumable: false,
-    preview: { emoji: '🎵', accent: '#A855F7', gradient: ['#1a0033', '#0d0020'] },
+    preview: { icon: 'music', accent: '#A855F7', gradient: ['#1a0033', '#0d0020'] },
   },
 ];
 
-export const CATEGORY_META: Record<StoreCategory, { label: string; emoji: string; accent: string }> = {
-  themes:    { label: 'Themes',    emoji: '🎨', accent: '#5EEAD4' },
-  hints:     { label: 'Hints',     emoji: '💡', accent: '#FFD700' },
-  powerups:  { label: 'Power-Ups', emoji: '⚡', accent: '#A855F7' },
-  cosmetics: { label: 'Style',     emoji: '✨', accent: '#FF69B4' },
+export const CATEGORY_META: Record<StoreCategory, { label: string; icon: string; accent: string }> = {
+  themes:    { label: 'Themes',    icon: 'palette', accent: '#5EEAD4' },
+  hints:     { label: 'Hints',     icon: 'lightbulb', accent: '#FFD700' },
+  powerups:  { label: 'Power-Ups', icon: 'zap', accent: '#A855F7' },
+  cosmetics: { label: 'Style',     icon: 'sparkles', accent: '#FF69B4' },
 };
 
 export const CATEGORIES: StoreCategory[] = ['themes', 'hints', 'powerups', 'cosmetics'];
@@ -248,9 +248,9 @@ export const CATEGORIES: StoreCategory[] = ['themes', 'hints', 'powerups', 'cosm
 // ── Coin earning guide ────────────────────────────────────────────────────────
 
 export const EARN_GUIDE = [
-  { emoji: '⭐', label: '3-star solve',   coins: 30 },
-  { emoji: '✅', label: '2-star solve',   coins: 20 },
-  { emoji: '🎯', label: 'Complete level', coins: 10 },
-  { emoji: '🆕', label: 'First clear',    coins: '+15 bonus' },
-  { emoji: '📐', label: 'Larger grid',    coins: '+2 per extra row' },
+  { icon: 'star', label: '3-star solve',   coins: 30 },
+  { icon: 'check', label: '2-star solve',   coins: 20 },
+  { icon: 'target', label: 'Complete level', coins: 10 },
+  { icon: 'new', label: 'First clear',    coins: '+15 bonus' },
+  { icon: 'grid', label: 'Larger grid',    coins: '+2 per extra row' },
 ];

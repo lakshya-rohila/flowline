@@ -138,3 +138,231 @@ export function computeLevelReward(
   const coins = base + starBonus + firstBonus + sizeBonus;
   return { coins, isFirstTime: !wasCompleted, stars };
 }
+
+// ── Statistics tracking ───────────────────────────────────────────────────────
+
+const STATS_KEY = 'flowline_stats_v1';
+
+export interface GameStats {
+  totalPuzzlesSolved: number;
+  totalPlayTimeMs: number;
+  totalMoves: number;
+  totalUndos: number;
+  totalHintsUsed: number;
+  totalCoinsEarned: number;
+  threeStarCount: number;
+  twoStarCount: number;
+  oneStarCount: number;
+  fastSolvesUnder30s: number;     // For Speed Demon achievement
+  levelsWithoutHints: number;     // For Big Brain achievement
+  levelsWithoutUndo: number;      // For Flawless achievement
+  currentNoUndoStreak: number;
+  currentNoHintStreak: number;
+  bestSolveTimeMs: number;
+  firstPlayDate: number;
+  lastPlayDate: number;
+}
+
+const DEFAULT_STATS: GameStats = {
+  totalPuzzlesSolved: 0,
+  totalPlayTimeMs: 0,
+  totalMoves: 0,
+  totalUndos: 0,
+  totalHintsUsed: 0,
+  totalCoinsEarned: 0,
+  threeStarCount: 0,
+  twoStarCount: 0,
+  oneStarCount: 0,
+  fastSolvesUnder30s: 0,
+  levelsWithoutHints: 0,
+  levelsWithoutUndo: 0,
+  currentNoUndoStreak: 0,
+  currentNoHintStreak: 0,
+  bestSolveTimeMs: 0,
+  firstPlayDate: Date.now(),
+  lastPlayDate: Date.now(),
+};
+
+export function getStats(): GameStats {
+  try {
+    const raw = localStorage.getItem(STATS_KEY);
+    if (!raw) return { ...DEFAULT_STATS };
+    return { ...DEFAULT_STATS, ...JSON.parse(raw) } as GameStats;
+  } catch {
+    return { ...DEFAULT_STATS };
+  }
+}
+
+function saveStats(stats: GameStats): void {
+  try {
+    localStorage.setItem(STATS_KEY, JSON.stringify(stats));
+  } catch { /* ignore */ }
+}
+
+export function recordSolve(
+  timeMs: number,
+  moves: number,
+  stars: number,
+  coinsEarned: number,
+  hintsUsed: number,
+  undosUsed: number,
+): void {
+  const stats = getStats();
+
+  stats.totalPuzzlesSolved++;
+  stats.totalPlayTimeMs += timeMs;
+  stats.totalMoves += moves;
+  stats.totalCoinsEarned += coinsEarned;
+  stats.lastPlayDate = Date.now();
+
+  // Star counts
+  if (stars === 3) stats.threeStarCount++;
+  else if (stars === 2) stats.twoStarCount++;
+  else stats.oneStarCount++;
+
+  // Speed tracking
+  if (timeMs < 30000) stats.fastSolvesUnder30s++;
+
+  // Best time
+  if (stats.bestSolveTimeMs === 0 || timeMs < stats.bestSolveTimeMs) {
+    stats.bestSolveTimeMs = timeMs;
+  }
+
+  // No-hint streak
+  if (hintsUsed === 0) {
+    stats.currentNoHintStreak++;
+    stats.levelsWithoutHints++;
+  } else {
+    stats.currentNoHintStreak = 0;
+  }
+
+  // No-undo streak
+  if (undosUsed === 0) {
+    stats.currentNoUndoStreak++;
+    stats.levelsWithoutUndo++;
+  } else {
+    stats.currentNoUndoStreak = 0;
+  }
+
+  saveStats(stats);
+  checkAchievements(stats);
+}
+
+export function recordUndo(): void {
+  const stats = getStats();
+  stats.totalUndos++;
+  saveStats(stats);
+  checkAchievements(stats);
+}
+
+export function recordHintUsed(): void {
+  const stats = getStats();
+  stats.totalHintsUsed++;
+  saveStats(stats);
+}
+
+// ── Achievement tracking ──────────────────────────────────────────────────────
+
+const ACHIEVEMENTS_KEY = 'flowline_achievements_v1';
+const ACHIEVEMENT_QUEUE_KEY = 'flowline_achievement_queue_v1';
+
+export type UnlockedAchievements = Record<string, number>; // achievementId → timestamp
+
+export function getUnlockedAchievements(): UnlockedAchievements {
+  try {
+    const raw = localStorage.getItem(ACHIEVEMENTS_KEY);
+    return raw ? JSON.parse(raw) as UnlockedAchievements : {};
+  } catch {
+    return {};
+  }
+}
+
+export function isAchievementUnlocked(achievementId: string): boolean {
+  return !!getUnlockedAchievements()[achievementId];
+}
+
+function unlockAchievement(achievementId: string): void {
+  const unlocked = getUnlockedAchievements();
+  if (unlocked[achievementId]) return; // Already unlocked
+
+  unlocked[achievementId] = Date.now();
+  try {
+    localStorage.setItem(ACHIEVEMENTS_KEY, JSON.stringify(unlocked));
+
+    // Add to queue for notification
+    const queue = getAchievementQueue();
+    queue.push(achievementId);
+    localStorage.setItem(ACHIEVEMENT_QUEUE_KEY, JSON.stringify(queue));
+  } catch { /* ignore */ }
+}
+
+export function getAchievementQueue(): string[] {
+  try {
+    const raw = localStorage.getItem(ACHIEVEMENT_QUEUE_KEY);
+    return raw ? JSON.parse(raw) as string[] : [];
+  } catch {
+    return [];
+  }
+}
+
+export function clearAchievementQueue(): void {
+  try {
+    localStorage.setItem(ACHIEVEMENT_QUEUE_KEY, JSON.stringify([]));
+  } catch { /* ignore */ }
+}
+
+function checkAchievements(stats: GameStats): void {
+  const progress = loadProgress();
+  const totalCoins = stats.totalCoinsEarned;
+
+  // First solve
+  if (stats.totalPuzzlesSolved >= 1) unlockAchievement('first_solve');
+
+  // Quick learner
+  if (stats.totalPuzzlesSolved >= 10) unlockAchievement('quick_learner');
+
+  // Speed Demon
+  if (stats.fastSolvesUnder30s >= 10) unlockAchievement('speed_demon');
+
+  // Perfectionist
+  if (stats.threeStarCount >= 50) unlockAchievement('perfectionist');
+
+  // Persistent
+  if (stats.totalUndos >= 100) unlockAchievement('persistent');
+
+  // Big Brain
+  if (stats.levelsWithoutHints >= 20) unlockAchievement('big_brain');
+
+  // No mistakes (flawless)
+  if (stats.levelsWithoutUndo >= 5) unlockAchievement('no_mistakes');
+
+  // Marathon
+  if (stats.totalPuzzlesSolved >= 100) unlockAchievement('marathon');
+
+  // Master Solver
+  if (stats.totalPuzzlesSolved >= 500) unlockAchievement('master_solver');
+
+  // Coin Collector
+  if (totalCoins >= 1000) unlockAchievement('coin_collector');
+
+  // Pack completion (check if all levels in pack are completed)
+  checkPackCompletion(progress);
+}
+
+function checkPackCompletion(progress: ProgressMap): void {
+  // This will be implemented when we check against actual level packs
+  // For now, we'll just track if certain level ranges are complete
+  const completed = Object.keys(progress);
+
+  // Count levels per pack (assuming pack prefixes like "flow_", "zen_", etc.)
+  const flowLevels = completed.filter(id => id.startsWith('flow_')).length;
+  const zenLevels = completed.filter(id => id.startsWith('zen_')).length;
+  const proLevels = completed.filter(id => id.startsWith('pro_')).length;
+  const masterLevels = completed.filter(id => id.startsWith('master_')).length;
+
+  // Unlock pack achievements (these numbers should match actual pack sizes)
+  if (flowLevels >= 20) unlockAchievement('pack_champion_flow');
+  if (zenLevels >= 20) unlockAchievement('pack_champion_zen');
+  if (proLevels >= 25) unlockAchievement('pack_champion_pro');
+  if (masterLevels >= 30) unlockAchievement('pack_champion_master');
+}

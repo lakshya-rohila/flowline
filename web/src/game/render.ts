@@ -25,29 +25,69 @@ export function drawGrid(ctx: CanvasRenderingContext2D, state: GameState, layout
   const { width, height, GRID_ORIGIN_X, GRID_ORIGIN_Y, GRID_SIZE, CELL_SIZE } = layout;
   const n = state.level.size;
 
+  // Background
   ctx.fillStyle = UI_COLORS.bg;
   ctx.fillRect(0, 0, width, height);
 
+  // Grid background with subtle inner shadow
+  ctx.save();
   ctx.fillStyle = UI_COLORS.gridBg;
-  roundRectPath(ctx, GRID_ORIGIN_X, GRID_ORIGIN_Y, GRID_SIZE, GRID_SIZE, 8);
+  roundRectPath(ctx, GRID_ORIGIN_X, GRID_ORIGIN_Y, GRID_SIZE, GRID_SIZE, 12);
   ctx.fill();
 
-  ctx.strokeStyle = UI_COLORS.cellBorder;
+  // Subtle inner glow
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
+  ctx.shadowBlur = 20;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 4;
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
+  ctx.lineWidth = 2;
+  roundRectPath(ctx, GRID_ORIGIN_X + 1, GRID_ORIGIN_Y + 1, GRID_SIZE - 2, GRID_SIZE - 2, 11);
+  ctx.stroke();
+  ctx.restore();
+
+  // Cell borders - visible and refined
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
   ctx.lineWidth = 1;
-  for (let r = 0; r <= n; r++) {
+
+  for (let r = 1; r < n; r++) {
     const y = GRID_ORIGIN_Y + r * CELL_SIZE;
     ctx.beginPath();
-    ctx.moveTo(GRID_ORIGIN_X, y);
-    ctx.lineTo(GRID_ORIGIN_X + GRID_SIZE, y);
+    ctx.moveTo(GRID_ORIGIN_X + 1, y);
+    ctx.lineTo(GRID_ORIGIN_X + GRID_SIZE - 1, y);
     ctx.stroke();
   }
-  for (let c = 0; c <= n; c++) {
+  for (let c = 1; c < n; c++) {
     const x = GRID_ORIGIN_X + c * CELL_SIZE;
     ctx.beginPath();
-    ctx.moveTo(x, GRID_ORIGIN_Y);
-    ctx.lineTo(x, GRID_ORIGIN_Y + GRID_SIZE);
+    ctx.moveTo(x, GRID_ORIGIN_Y + 1);
+    ctx.lineTo(x, GRID_ORIGIN_Y + GRID_SIZE - 1);
     ctx.stroke();
   }
+
+  // Add subtle grid highlight on intersections for premium feel
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.015)';
+  for (let r = 1; r < n; r++) {
+    for (let c = 1; c < n; c++) {
+      const x = GRID_ORIGIN_X + c * CELL_SIZE;
+      const y = GRID_ORIGIN_Y + r * CELL_SIZE;
+      ctx.beginPath();
+      ctx.arc(x, y, 2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  // Outer border - premium double-stroke effect
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.18)';
+  ctx.lineWidth = 2;
+  roundRectPath(ctx, GRID_ORIGIN_X, GRID_ORIGIN_Y, GRID_SIZE, GRID_SIZE, 14);
+  ctx.stroke();
+
+  // Inner accent border for depth
+  ctx.strokeStyle = 'rgba(94, 234, 212, 0.08)';
+  ctx.lineWidth = 1;
+  roundRectPath(ctx, GRID_ORIGIN_X + 2, GRID_ORIGIN_Y + 2, GRID_SIZE - 4, GRID_SIZE - 4, 12);
+  ctx.stroke();
 }
 
 /**

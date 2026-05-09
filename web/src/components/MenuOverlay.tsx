@@ -50,6 +50,7 @@ export interface MenuOverlayProps {
   onSelectLevel: (level: LevelConfig) => void;
   onSelectPack: (packName: string) => void;
   onOpenStore?: () => void;
+  onOpenStats?: () => void;
 }
 
 export function MenuOverlay({
@@ -61,6 +62,7 @@ export function MenuOverlay({
   onSelectLevel,
   onSelectPack,
   onOpenStore,
+  onOpenStats,
 }: MenuOverlayProps) {
   if (!open) return null;
 
@@ -101,19 +103,32 @@ export function MenuOverlay({
           <span className="mo-brand-name">FLOWLINE</span>
         </div>
 
-        {/* Coin balance + store button */}
-        <button
-          type="button"
-          className="mo-store-btn"
-          onClick={onOpenStore}
-          aria-label={`${coins} coins — open store`}
-        >
-          <svg viewBox="0 0 20 20" fill="none" width="16" height="16" aria-hidden>
-            <circle cx="10" cy="10" r="9" fill="#FFD700" stroke="#B8860B" strokeWidth="1.1"/>
-            <text x="10" y="14" textAnchor="middle" fontSize="9" fontWeight="700" fill="#7B5200">₣</text>
-          </svg>
-          <span>{coins}</span>
-        </button>
+        {/* Coin balance + store button + stats button */}
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <button
+            type="button"
+            className="mo-icon-btn"
+            onClick={onOpenStats}
+            aria-label="Statistics"
+            title="Statistics"
+          >
+            <svg viewBox="0 0 20 20" fill="none" width="18" height="18" aria-hidden>
+              <path d="M3 17h14M5 13h2v4H5v-4zM9 9h2v8H9V9zM13 5h2v12h-2V5z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
+            </svg>
+          </button>
+          <button
+            type="button"
+            className="mo-store-btn"
+            onClick={onOpenStore}
+            aria-label={`${coins} coins — open store`}
+          >
+            <svg viewBox="0 0 20 20" fill="none" width="16" height="16" aria-hidden>
+              <circle cx="10" cy="10" r="9" fill="#FFD700" stroke="#B8860B" strokeWidth="1.1"/>
+              <text x="10" y="14" textAnchor="middle" fontSize="9" fontWeight="700" fill="#7B5200">₣</text>
+            </svg>
+            <span>{coins}</span>
+          </button>
+        </div>
       </header>
 
       {/* ── Hero banner ────────────────────────────────────────────── */}

@@ -5,10 +5,12 @@ import { MenuOverlay } from './components/MenuOverlay';
 import { OnboardingOverlay } from './components/OnboardingOverlay';
 import { SolveSheet } from './components/SolveSheet';
 import { StoreScreen } from './components/StoreScreen';
+import { StuckSheet } from './components/StuckSheet';
+import { StatsScreen } from './components/StatsScreen';
 import { PACKS, findLevelById, getDefaultLevel } from './data/levels';
 import { applyUndo, createInitialState, restartLevel } from './game/engine';
 import { computeHint, getMaxHintsPerLevel, type HintVisual } from './game/hint';
-import { addCoins, computeLevelReward, getCoins, saveLevelRecord } from './game/storage';
+import { addCoins, computeLevelReward, getCoins, saveLevelRecord, recordSolve, recordUndo, recordHintUsed } from './game/storage';
 import type { GameState, LevelConfig } from './types';
 import logoMarkUrl from './assets/game-assets/flowline-logo-mark.svg';
 import './App.css';
@@ -35,7 +37,7 @@ const LAST_SCREEN_KEY     = 'flowline_last_screen_v1'; // 'menu' | 'game'
 //  The landing screen is ALWAYS shown on hard refresh / cold load.
 //  Only within the same JS session (tab not closed) does state persist.
 
-type Screen = 'landing' | 'onboarding' | 'menu' | 'game' | 'store';
+type Screen = 'landing' | 'onboarding' | 'menu' | 'game' | 'store' | 'stats';
 
 function getInitialLevel(): LevelConfig {
   try {
@@ -96,6 +98,7 @@ export default function App() {
   const [level, setLevel] = useState<LevelConfig>(initial);
   const stateRef   = useRef<GameState>(createInitialState(initial));
   const [solveOpen, setSolveOpen] = useState(false);
+  const [stuckOpen, setStuckOpen] = useState(false);
   const [solveStats, setSolveStats] = useState({ moves: 0, elapsedMs: 0, coinsEarned: 0, stars: 1 });
   const [hud, setHud] = useState({
     moves: 0,
@@ -115,6 +118,13 @@ export default function App() {
   const [hintStatus, setHintStatus] = useState<string | null>(null);
   const hintStatusTimer  = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Track stuck state (all connected but not filled, and user has tried for a while)
+  const stuckTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Track usage for statistics
+  const undoCountRef = useRef(0);
+  const hintCountRef = useRef(0);
+
   // Persist current level id whenever it changes
   useEffect(() => {
     try { localStorage.setItem(LAST_LEVEL_KEY, level.id); } catch { /* ignore */ }
@@ -130,8 +140,15 @@ export default function App() {
   useEffect(() => {
     stateRef.current = createInitialState(level);
     setSolveOpen(false);
+    setStuckOpen(false);
     hintRef.current = null;
     setHintsLeft(getMaxHintsPerLevel());
+    undoCountRef.current = 0;
+    hintCountRef.current = 0;
+    if (stuckTimerRef.current) {
+      clearTimeout(stuckTimerRef.current);
+      stuckTimerRef.current = null;
+    }
   }, [level]);
 
   const metaLabel = useMemo(() => {
@@ -169,6 +186,21 @@ export default function App() {
         allConnected: s.allConnected,
       };
     });
+
+    // Show stuck sheet immediately if all pipes connected but not filled
+    if (s.allConnected && !s.solved && s.filledPercent < 100 && s.moves >= 2) {
+      if (!stuckTimerRef.current) {
+        stuckTimerRef.current = setTimeout(() => {
+          setStuckOpen(true);
+          stuckTimerRef.current = null;
+        }, 800); // Short delay to allow user to see the state before modal pops up
+      }
+    } else {
+      if (stuckTimerRef.current) {
+        clearTimeout(stuckTimerRef.current);
+        stuckTimerRef.current = null;
+      }
+    }
   }, []);
 
   // ── Solve ──────────────────────────────────────────────────────────────────
@@ -184,18 +216,33 @@ export default function App() {
     addCoins(earned);
     setCoins(getCoins());
     saveLevelRecord(s.level.id, s.moves, s.elapsedMs);
+
+    // Record statistics
+    recordSolve(s.elapsedMs, s.moves, stars, earned, hintCountRef.current, undoCountRef.current);
+
     setSolveStats({ moves: s.moves, elapsedMs: s.elapsedMs, coinsEarned: earned, stars });
     setSolveOpen(true);
   }, []);
 
   // ── Game controls ──────────────────────────────────────────────────────────
-  const handleUndo = () => { applyUndo(stateRef.current); };
+  const handleUndo = () => {
+    applyUndo(stateRef.current);
+    undoCountRef.current++;
+    recordUndo();
+  };
 
   const handleRestart = () => {
     restartLevel(stateRef.current);
     setSolveOpen(false);
+    setStuckOpen(false);
     hintRef.current  = null;
     setHintsLeft(getMaxHintsPerLevel());
+    undoCountRef.current = 0;
+    hintCountRef.current = 0;
+    if (stuckTimerRef.current) {
+      clearTimeout(stuckTimerRef.current);
+      stuckTimerRef.current = null;
+    }
   };
 
   const showHintStatus = useCallback((msg: string) => {
@@ -220,6 +267,8 @@ export default function App() {
     }
     hintRef.current = h;
     setHintsLeft((n) => n - 1);
+    hintCountRef.current++;
+    recordHintUsed();
     showHintStatus(h.caption);
   };
 
@@ -271,6 +320,7 @@ export default function App() {
         onSelectLevel={(lvl) => loadLevel(lvl)}
         onSelectPack={(name) => setPackName(name)}
         onOpenStore={() => goTo('store')}
+        onOpenStats={() => goTo('stats')}
       />
     );
   }
@@ -280,6 +330,18 @@ export default function App() {
       <StoreScreen
         onClose={() => {
           refreshCoins();
+          // Return to wherever they came from
+          const last = localStorage.getItem(LAST_SCREEN_KEY);
+          goTo(last === 'game' ? 'game' : 'menu');
+        }}
+      />
+    );
+  }
+
+  if (screen === 'stats') {
+    return (
+      <StatsScreen
+        onClose={() => {
           // Return to wherever they came from
           const last = localStorage.getItem(LAST_SCREEN_KEY);
           goTo(last === 'game' ? 'game' : 'menu');
@@ -479,6 +541,14 @@ export default function App() {
         stars={solveStats.stars}
         onNext={goNextLevel}
         onMenu={() => { setSolveOpen(false); goTo('menu'); }}
+      />
+
+      <StuckSheet
+        open={stuckOpen}
+        moves={hud.moves}
+        filledPercent={hud.filledPercent}
+        onTryAgain={handleRestart}
+        onMenu={() => { setStuckOpen(false); goTo('menu'); }}
       />
     </div>
   );

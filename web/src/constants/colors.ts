@@ -17,8 +17,8 @@ export const PIPE_COLORS: Record<PipeColorKey, string> = {
 
 export const UI_COLORS = {
   bg: '#07070c',
-  gridBg: '#101018',
-  cellBorder: '#1c1c2a',
+  gridBg: '#0d0d15',           // Slightly lighter for contrast
+  cellBorder: '#1a1a24',       // More visible subtle borders
   headerBg: '#0b0b12',
   text: '#f4f4f8',
   textDim: '#6b7280',
