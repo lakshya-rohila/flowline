@@ -1,269 +1,242 @@
 import { useEffect, useRef, useState } from 'react';
+import logoHorizontal from '../assets/game-assets/flowline-logo-horizontal.svg';
+import neonPanel from '../assets/game-assets/flowline-neon-bg-panel.png';
 
 interface Props {
   onPlay: () => void;
   onHowToPlay: () => void;
 }
 
-// Animated mini-grid demo — draws a small solved board to show off the game
-function MiniBoard() {
+// ── Animated canvas: pipes drawing themselves across a mini 5×5 grid ─────────
+
+interface PipePath {
+  color: string;
+  cells: [number, number][];
+}
+
+// Verified non-overlapping 5×5 board (all 25 cells, all paths orthogonally connected)
+// Grid layout:
+//  row0: R  R  R  R  R
+//  row1: B  G  G  G  R
+//  row2: B  G  Y  Y  R
+//  row3: B  G  Y  O  R
+//  row4: B  B  O  O  R
+const FINAL_PATHS: PipePath[] = [
+  {
+    color: '#FF3B3B', // red: top row → right column
+    cells: [[0,0],[0,1],[0,2],[0,3],[0,4],[1,4],[2,4],[3,4],[4,4]],
+  },
+  {
+    color: '#3B9EFF', // blue: left column → bottom
+    cells: [[1,0],[2,0],[3,0],[4,0],[4,1]],
+  },
+  {
+    color: '#2ECC71', // green: row-1 right → down-left snake
+    cells: [[1,3],[1,2],[1,1],[2,1],[3,1]],
+  },
+  {
+    color: '#FFD700', // yellow: middle block
+    cells: [[2,3],[2,2],[3,2]],
+  },
+  {
+    color: '#FF8C00', // orange: bottom-right corner
+    cells: [[3,3],[4,3],[4,2]],
+  },
+];
+
+
+
+function AnimatedBoard() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const rafRef = useRef<number>(0);
-  const startRef = useRef<number>(0);
+  const rafRef    = useRef<number>(0);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const DPR = Math.min(window.devicePixelRatio ?? 1, 3);
-    const SIZE = 200;
-    canvas.width = SIZE * DPR;
+    const DPR  = Math.min(window.devicePixelRatio || 1, 2);
+    const SIZE = 220;
+    canvas.width  = SIZE * DPR;
     canvas.height = SIZE * DPR;
-    canvas.style.width = `${SIZE}px`;
+    canvas.style.width  = `${SIZE}px`;
     canvas.style.height = `${SIZE}px`;
+
     const ctx = canvas.getContext('2d')!;
     ctx.scale(DPR, DPR);
 
-    const GRID = 5;
-    const PAD = 10;
-    const cellSize = (SIZE - PAD * 2) / GRID;
+    const N    = 5;
+    const PAD  = 12;
+    const cell = (SIZE - PAD * 2) / N;
 
-    // Non-overlapping 5×5 board paths
-    const BOARD_PATHS: Array<{
-      color: string;
-      dots: [[number, number], [number, number]];
-      cells: [number, number][];
-    }> = [
-      {
-        color: '#FF3B3B',
-        dots: [
-          [0, 0],
-          [4, 4],
-        ],
-        cells: [
-          [0, 0],
-          [0, 1],
-          [0, 2],
-          [0, 3],
-          [0, 4],
-          [1, 4],
-          [2, 4],
-          [3, 4],
-          [4, 4],
-        ],
-      },
-      {
-        color: '#3B9EFF',
-        dots: [
-          [1, 0],
-          [3, 0],
-        ],
-        cells: [
-          [1, 0],
-          [2, 0],
-          [3, 0],
-        ],
-      },
-      {
-        color: '#2ECC71',
-        dots: [
-          [1, 1],
-          [4, 0],
-        ],
-        cells: [
-          [1, 1],
-          [2, 1],
-          [3, 1],
-          [4, 1],
-          [4, 0],
-        ],
-      },
-      {
-        color: '#FFD700',
-        dots: [
-          [1, 2],
-          [4, 3],
-        ],
-        cells: [
-          [1, 2],
-          [1, 3],
-          [2, 3],
-          [3, 3],
-          [4, 3],
-        ],
-      },
-      {
-        color: '#FF8C00',
-        dots: [
-          [2, 2],
-          [4, 2],
-        ],
-        cells: [
-          [2, 2],
-          [3, 2],
-          [4, 2],
-        ],
-      },
-    ];
-
-    function cellCenter(r: number, c: number): [number, number] {
-      return [PAD + c * cellSize + cellSize / 2, PAD + r * cellSize + cellSize / 2];
+    function cc(r: number, c: number): [number, number] {
+      return [PAD + c * cell + cell / 2, PAD + r * cell + cell / 2];
     }
 
-    function drawFrame(t: number) {
+    const totalCells = FINAL_PATHS.reduce((s, p) => s + p.cells.length, 0);
+
+    function draw(elapsed: number) {
       ctx.clearRect(0, 0, SIZE, SIZE);
 
-      // Background
+      // ── Grid background ────────────────────────────────────────────────
       ctx.fillStyle = '#101018';
-      const R = 12;
       ctx.beginPath();
-      ctx.roundRect(PAD / 2, PAD / 2, SIZE - PAD, SIZE - PAD, R);
+      ctx.roundRect(PAD / 2, PAD / 2, SIZE - PAD, SIZE - PAD, 12);
       ctx.fill();
 
-      // Grid lines
       ctx.strokeStyle = '#1c1c2a';
       ctx.lineWidth = 1;
-      for (let i = 0; i <= GRID; i++) {
-        const x = PAD + i * cellSize;
-        const y = PAD + i * cellSize;
-        ctx.beginPath();
-        ctx.moveTo(x, PAD);
-        ctx.lineTo(x, PAD + GRID * cellSize);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(PAD, y);
-        ctx.lineTo(PAD + GRID * cellSize, y);
-        ctx.stroke();
+      for (let i = 0; i <= N; i++) {
+        const x = PAD + i * cell;
+        const y = PAD + i * cell;
+        ctx.beginPath(); ctx.moveTo(x, PAD); ctx.lineTo(x, PAD + N * cell); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(PAD, y); ctx.lineTo(PAD + N * cell, y); ctx.stroke();
       }
 
-      // Animate: draw paths progressively
-      const ANIM_DURATION = 2200;
-      const PAUSE = 800;
-      const totalCells = BOARD_PATHS.reduce((s, p) => s + p.cells.length, 0);
-      const progress = ((t % (ANIM_DURATION + PAUSE)) / ANIM_DURATION) * totalCells;
+      // ── Animate path drawing ───────────────────────────────────────────
+      // Loop: 2.8s draw + 0.8s pause
+      const DRAW_MS  = 2800;
+      const PAUSE_MS = 800;
+      const CYCLE    = DRAW_MS + PAUSE_MS;
+      const t        = elapsed % CYCLE;
+      const progress = Math.min(t / DRAW_MS, 1) * totalCells;
 
       let drawn = 0;
-      for (const path of BOARD_PATHS) {
-        const pathProgress = Math.max(0, Math.min(path.cells.length, progress - drawn));
+      for (const path of FINAL_PATHS) {
+        const pathProg = Math.max(0, Math.min(path.cells.length, progress - drawn));
         drawn += path.cells.length;
-
-        if (pathProgress < 1) continue;
+        if (pathProg < 0.01) continue;
 
         ctx.strokeStyle = path.color;
-        ctx.lineWidth = cellSize * 0.38;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
+        ctx.lineWidth   = cell * 0.42;
+        ctx.lineCap     = 'round';
+        ctx.lineJoin    = 'round';
+        ctx.shadowColor = path.color;
+        ctx.shadowBlur  = 6;
 
-        const drawCount = Math.floor(pathProgress);
-        const subFrac = pathProgress - drawCount;
+        const whole = Math.floor(pathProg);
+        const frac  = pathProg - whole;
 
         ctx.beginPath();
-        for (let i = 0; i < drawCount && i < path.cells.length; i++) {
-          const [cr, cc] = path.cells[i];
-          const [x, y] = cellCenter(cr, cc);
-          if (i === 0) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
+        for (let i = 0; i < Math.min(whole, path.cells.length); i++) {
+          const [x, y] = cc(path.cells[i][0], path.cells[i][1]);
+          i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
         }
-
-        // Smooth last segment interpolation
-        if (drawCount < path.cells.length && subFrac > 0) {
-          const [r1, c1] = path.cells[drawCount - 1];
-          const [r2, c2] = path.cells[drawCount];
-          const [x1, y1] = cellCenter(r1, c1);
-          const [x2, y2] = cellCenter(r2, c2);
-          ctx.lineTo(x1 + (x2 - x1) * subFrac, y1 + (y2 - y1) * subFrac);
+        if (whole > 0 && whole < path.cells.length && frac > 0) {
+          const [x1, y1] = cc(path.cells[whole - 1][0], path.cells[whole - 1][1]);
+          const [x2, y2] = cc(path.cells[whole][0],     path.cells[whole][1]);
+          ctx.lineTo(x1 + (x2 - x1) * frac, y1 + (y2 - y1) * frac);
         }
         ctx.stroke();
+        ctx.shadowBlur = 0;
       }
 
-      // Draw endpoints (always visible)
-      for (const path of BOARD_PATHS) {
-        for (const [r, c] of path.dots) {
-          const [x, y] = cellCenter(r, c);
-          const rad = cellSize * 0.3;
+      // ── Endpoint dots (always visible) ────────────────────────────────
+      for (const path of FINAL_PATHS) {
+        for (let ei = 0; ei < 2; ei++) {
+          const cell_idx = ei === 0 ? 0 : path.cells.length - 1;
+          const [r, c]   = path.cells[cell_idx];
+          const [x, y]   = cc(r, c);
+          const rad       = cell * 0.31;
 
           // Glow
-          const grd = ctx.createRadialGradient(x, y, 0, x, y, rad * 1.8);
+          const grd = ctx.createRadialGradient(x, y, 0, x, y, rad * 2);
           grd.addColorStop(0, path.color + '55');
           grd.addColorStop(1, path.color + '00');
-          ctx.beginPath();
-          ctx.arc(x, y, rad * 1.8, 0, Math.PI * 2);
-          ctx.fillStyle = grd;
-          ctx.fill();
+          ctx.beginPath(); ctx.arc(x, y, rad * 2, 0, Math.PI * 2);
+          ctx.fillStyle = grd; ctx.fill();
 
           // Dot
-          ctx.beginPath();
-          ctx.arc(x, y, rad, 0, Math.PI * 2);
-          ctx.fillStyle = path.color;
-          ctx.fill();
+          ctx.beginPath(); ctx.arc(x, y, rad, 0, Math.PI * 2);
+          ctx.fillStyle = path.color; ctx.fill();
 
-          // Highlight
+          // Specular
           ctx.beginPath();
-          ctx.arc(x - rad * 0.28, y - rad * 0.28, rad * 0.3, 0, Math.PI * 2);
-          ctx.fillStyle = 'rgba(255,255,255,0.55)';
-          ctx.fill();
+          ctx.arc(x - rad * 0.3, y - rad * 0.3, rad * 0.28, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(255,255,255,0.55)'; ctx.fill();
         }
       }
     }
 
+    let start = 0;
     function loop(ts: number) {
-      if (!startRef.current) startRef.current = ts;
-      drawFrame(ts - startRef.current);
+      if (!start) start = ts;
+      draw(ts - start);
       rafRef.current = requestAnimationFrame(loop);
     }
     rafRef.current = requestAnimationFrame(loop);
-
     return () => cancelAnimationFrame(rafRef.current);
   }, []);
 
-  return <canvas ref={canvasRef} className="landing-mini-board" aria-hidden />;
+  return <canvas ref={canvasRef} className="splash-board" aria-hidden />;
 }
 
+// ── Main splash screen ────────────────────────────────────────────────────────
+
 export function LandingScreen({ onPlay, onHowToPlay }: Props) {
-  const [visible, setVisible] = useState(false);
+  const [phase, setPhase] = useState(0);
+  // phase 0 = hidden, 1 = logo in, 2 = board in, 3 = pills in, 4 = CTA in
 
   useEffect(() => {
-    // Slight delay to trigger CSS entrance animation
-    const t = setTimeout(() => setVisible(true), 60);
-    return () => clearTimeout(t);
+    // Stagger each section with a short delay for a cinematic entrance
+    const timers = [
+      setTimeout(() => setPhase(1), 80),
+      setTimeout(() => setPhase(2), 420),
+      setTimeout(() => setPhase(3), 750),
+      setTimeout(() => setPhase(4), 1000),
+    ];
+    return () => timers.forEach(clearTimeout);
   }, []);
 
   return (
-    <div className={`landing ${visible ? 'landing--visible' : ''}`}>
-      {/* Background glow blobs */}
-      <div className="landing-blob landing-blob--a" aria-hidden />
-      <div className="landing-blob landing-blob--b" aria-hidden />
+    <div
+      className="splash"
+      style={{ backgroundImage: `linear-gradient(180deg, rgba(7,7,12,.55) 0%, rgba(7,7,12,.97) 100%), url(${neonPanel})` }}
+    >
+      {/* Ambient blobs */}
+      <div className="splash-blob splash-blob--tl" aria-hidden />
+      <div className="splash-blob splash-blob--br" aria-hidden />
 
-      <div className="landing-inner">
-        {/* Logo */}
-        <div className="landing-logo-wrap">
-          <span className="landing-logo">FLOWLINE</span>
-          <span className="landing-logo-sub">PUZZLE</span>
+      <div className="splash-inner">
+
+        {/* ── Logo ── */}
+        <div className={`splash-logo-wrap splash-enter ${phase >= 1 ? 'splash-enter--in' : ''}`}>
+          <img src={logoHorizontal} alt="FLOWLINE" className="splash-logo" />
+          <p className="splash-tagline">connect · fill · solve</p>
         </div>
 
-        {/* Mini animated board */}
-        <div className="landing-board-wrap">
-          <MiniBoard />
-          <div className="landing-board-caption">connect · fill · solve</div>
+        {/* ── Animated board ── */}
+        <div className={`splash-board-wrap splash-enter ${phase >= 2 ? 'splash-enter--in' : ''}`}
+             style={{ transitionDelay: '0.05s' }}>
+          <AnimatedBoard />
         </div>
 
-        {/* Feature pills */}
-        <div className="landing-pills">
-          <span className="landing-pill">12 colors</span>
-          <span className="landing-pill">BFS hints</span>
-          <span className="landing-pill">Undo / Redo</span>
-          <span className="landing-pill">Best scores</span>
+        {/* ── Pills ── */}
+        <div className={`splash-pills splash-enter ${phase >= 3 ? 'splash-enter--in' : ''}`}
+             style={{ transitionDelay: '0.04s' }}>
+          {['12 pipe colors', 'BFS hints', 'Undo anytime', 'Best scores'].map((p) => (
+            <span key={p} className="splash-pill">{p}</span>
+          ))}
         </div>
 
-        {/* CTA */}
-        <div className="landing-cta">
-          <button type="button" className="landing-btn landing-btn--primary" onClick={onPlay}>
+        {/* ── CTA ── */}
+        <div className={`splash-cta splash-enter ${phase >= 4 ? 'splash-enter--in' : ''}`}
+             style={{ transitionDelay: '0.06s' }}>
+          <button
+            type="button"
+            className="splash-btn splash-btn--primary"
+            onClick={onPlay}
+          >
             PLAY NOW
           </button>
-          <button type="button" className="landing-btn landing-btn--ghost" onClick={onHowToPlay}>
+          <button
+            type="button"
+            className="splash-btn splash-btn--ghost"
+            onClick={onHowToPlay}
+          >
             HOW TO PLAY
           </button>
         </div>
+
       </div>
     </div>
   );

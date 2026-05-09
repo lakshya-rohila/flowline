@@ -1,0 +1,25 @@
+<svg width="320" height="420" viewBox="0 0 320 420" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Flowline level card frame</title>
+  <desc id="desc">Dark neon frame for level selection cards.</desc>
+  <defs>
+    <linearGradient id="stroke" x1="18" y1="18" x2="302" y2="402" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#5EEAD4"/>
+      <stop offset="0.44" stop-color="#1C1C2A"/>
+      <stop offset="1" stop-color="#2ECC71"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(70 82) rotate(54) scale(294 222)">
+      <stop stop-color="#00CED1" stop-opacity="0.2"/>
+      <stop offset="0.45" stop-color="#0F172A" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#07070C" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect x="12" y="12" width="296" height="396" rx="28" fill="#101018"/>
+  <rect x="12" y="12" width="296" height="396" rx="28" fill="url(#glow)"/>
+  <rect x="12.75" y="12.75" width="294.5" height="394.5" rx="27.25" stroke="url(#stroke)" stroke-opacity="0.72" stroke-width="1.5"/>
+  <path d="M38 112H102C123 112 136 99 136 78V52" stroke="#00CED1" stroke-opacity="0.22" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M54 320H126C148 320 162 306 162 284V254H236" stroke="#2ECC71" stroke-opacity="0.16" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="38" cy="112" r="15" fill="#00CED1" fill-opacity="0.2"/>
+  <circle cx="136" cy="52" r="15" fill="#00CED1" fill-opacity="0.2"/>
+  <circle cx="54" cy="320" r="13" fill="#2ECC71" fill-opacity="0.16"/>
+  <circle cx="236" cy="254" r="13" fill="#2ECC71" fill-opacity="0.16"/>
+</svg>

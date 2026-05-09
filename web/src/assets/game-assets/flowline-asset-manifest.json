@@ -1,0 +1,21 @@
+{
+  "brand": {
+    "logoHorizontal": "flowline-logo-horizontal.svg",
+    "logoMark": "flowline-logo-mark.svg",
+    "appIcon": "flowline-app-icon-1024.png"
+  },
+  "marketing": {
+    "openGraphCover": "flowline-og-cover-1600x900.png",
+    "neonBackgroundPanel": "flowline-neon-bg-panel.png"
+  },
+  "gameplay": {
+    "boardPreview": "flowline-board-preview.png",
+    "solvedBadge": "flowline-solved-badge.svg",
+    "hintPulse": "flowline-hint-pulse.svg"
+  },
+  "tutorial": {
+    "connectDots": "flowline-tutorial-connect.png",
+    "fillBoard": "flowline-tutorial-fill.png",
+    "hintsAndUndo": "flowline-tutorial-hints-undo.png"
+  }
+}

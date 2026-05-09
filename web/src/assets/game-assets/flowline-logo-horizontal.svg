@@ -1,0 +1,37 @@
+<svg width="960" height="240" viewBox="0 0 960 240" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Flowline horizontal logo</title>
+  <desc id="desc">FLOWLINE wordmark with neon pipe motif.</desc>
+  <defs>
+    <filter id="cyanGlow" x="-40%" y="-80%" width="180%" height="260%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="7" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0.03 0 0 0 0 0.93 0 0 0 0 0.91 0 0 0 0.95 0"/>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="greenGlow" x="-60%" y="-60%" width="220%" height="220%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0.18 0 0 0 0 1 0 0 0 0 0.5 0 0 0 0.9 0"/>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <linearGradient id="wordGradient" x1="220" y1="42" x2="860" y2="198" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F4F4F8"/>
+      <stop offset="0.55" stop-color="#9FFCF4"/>
+      <stop offset="1" stop-color="#2ECC71"/>
+    </linearGradient>
+  </defs>
+  <rect width="960" height="240" rx="48" fill="#07070C"/>
+  <path d="M73 128H124C147 128 162 113 162 90V75" stroke="#00CED1" stroke-width="18" stroke-linecap="round" stroke-linejoin="round" filter="url(#cyanGlow)"/>
+  <circle cx="73" cy="128" r="25" fill="#00CED1" filter="url(#cyanGlow)"/>
+  <circle cx="162" cy="75" r="25" fill="#2ECC71" filter="url(#greenGlow)"/>
+  <circle cx="73" cy="128" r="10" fill="white" fill-opacity="0.35"/>
+  <circle cx="162" cy="75" r="10" fill="white" fill-opacity="0.35"/>
+  <path d="M62 184H124C147 184 162 169 162 146V132" stroke="#2ECC71" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" opacity="0.9" filter="url(#greenGlow)"/>
+  <circle cx="62" cy="184" r="17" fill="#2ECC71" filter="url(#greenGlow)"/>
+  <text x="225" y="149" fill="url(#wordGradient)" font-family="JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="82" font-weight="700" letter-spacing="18">FLOWLINE</text>
+  <text x="229" y="184" fill="#6B7280" font-family="JetBrains Mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="20" font-weight="500" letter-spacing="8">CONNECT EVERY CURRENT</text>
+</svg>

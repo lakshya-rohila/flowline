@@ -1,0 +1,29 @@
+<svg width="640" height="160" viewBox="0 0 640 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <symbol id="pack-beginner" viewBox="0 0 120 120">
+      <rect x="12" y="12" width="96" height="96" rx="28" fill="#101018" stroke="#5EEAD4" stroke-width="3"/>
+      <path d="M33 78H54C67 78 74 71 74 58V42" stroke="#5EEAD4" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="33" cy="78" r="14" fill="#5EEAD4"/>
+      <circle cx="74" cy="42" r="14" fill="#2ECC71"/>
+    </symbol>
+    <symbol id="pack-intermediate" viewBox="0 0 120 120">
+      <rect x="12" y="12" width="96" height="96" rx="28" fill="#101018" stroke="#3B9EFF" stroke-width="3"/>
+      <path d="M31 34H78V59H47V86H89" stroke="#3B9EFF" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="31" cy="34" r="13" fill="#3B9EFF"/>
+      <circle cx="89" cy="86" r="13" fill="#00CED1"/>
+    </symbol>
+    <symbol id="pack-advanced" viewBox="0 0 120 120">
+      <rect x="12" y="12" width="96" height="96" rx="28" fill="#101018" stroke="#FFD700" stroke-width="3"/>
+      <path d="M31 88V59H58V31H88V74H62" stroke="#FFD700" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="31" cy="88" r="13" fill="#FFD700"/>
+      <circle cx="88" cy="74" r="13" fill="#FF8C00"/>
+    </symbol>
+    <symbol id="pack-expert" viewBox="0 0 120 120">
+      <rect x="12" y="12" width="96" height="96" rx="28" fill="#101018" stroke="#FF69B4" stroke-width="3"/>
+      <path d="M30 32H88V54H56V78H91" stroke="#FF69B4" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M30 88H50" stroke="#9B59B6" stroke-width="10" stroke-linecap="round"/>
+      <circle cx="30" cy="32" r="13" fill="#FF69B4"/>
+      <circle cx="91" cy="78" r="13" fill="#9B59B6"/>
+    </symbol>
+  </defs>
+</svg>

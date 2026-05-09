@@ -5,7 +5,7 @@ import type { Cell, GameState } from '../types';
 import { checkSolved, clearActiveDrag, extendPath, resolveStartDrag } from '../game/engine';
 import { clientToCell, computeBoardLayout, type BoardLayout } from '../game/layout';
 import * as render from '../game/render';
-import { playConnectTone, playSolveTone, resumeAudio } from '../game/audio';
+import { playConnectTone, playFailTone, playPipeCompleteTone, playSolveTone, resumeAudio } from '../game/audio';
 
 export interface GameCanvasProps {
   stateRef: React.MutableRefObject<GameState>;
@@ -26,9 +26,11 @@ export function GameCanvas({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const layoutRef = useRef<BoardLayout | null>(null);
   const rafRef = useRef<number>(0);
-  // Track whether we've already fired the solve notification for this level
-  const solveNotifiedRef = useRef(false);
+  const solveNotifiedRef   = useRef(false);
   const solveSoundPlayedRef = useRef(false);
+  // Fail effect: tracks allConnected→false transitions for the shake+tone
+  const wasAllConnectedRef  = useRef(false);
+  const failPlayedRef       = useRef(false);
 
   // ── Render / animation loop ─────────────────────────────────────────────
   useEffect(() => {
@@ -82,17 +84,32 @@ export function GameCanvas({
         state.elapsedMs = Date.now() - state.startTime;
       }
 
+      // ── Fail detection: all pipes connected but board not full ────────────
+      // Play fail tone once when the player connects the last pipe but misses fill
+      const allConnNow = state.allConnected && !state.solved;
+      if (allConnNow && !wasAllConnectedRef.current && !failPlayedRef.current) {
+        failPlayedRef.current = true;
+        playFailTone();
+        // Shake the canvas wrap for tactile feedback
+        wrap.classList.add('canvas-shake');
+        setTimeout(() => wrap.classList.remove('canvas-shake'), 600);
+      }
+      if (!allConnNow) {
+        failPlayedRef.current = false;
+      }
+      wasAllConnectedRef.current = allConnNow;
+
       // ── Solve detection: react the moment state.solved flips to true ───────
       if (state.solved) {
-        // Play sound once (immediately, don't wait for animation)
+        // Play rich win fanfare once
         if (!solveSoundPlayedRef.current) {
           solveSoundPlayedRef.current = true;
           playSolveTone();
         }
 
-        // Advance solve flash animation 0→1 over 350ms
+        // Advance solve flash animation 0→1 over 400ms
         if (state.solveAnimProgress < 1) {
-          state.solveAnimProgress = Math.min(1, state.solveAnimProgress + dt / 350);
+          state.solveAnimProgress = Math.min(1, state.solveAnimProgress + dt / 400);
         }
 
         // Fire the overlay callback ONCE when animation completes
@@ -101,8 +118,7 @@ export function GameCanvas({
           onSolveAnimationComplete?.();
         }
       } else {
-        // Not solved — reset tracking so it's ready for next solve
-        solveNotifiedRef.current = false;
+        solveNotifiedRef.current   = false;
         solveSoundPlayedRef.current = false;
       }
 
@@ -185,10 +201,16 @@ export function GameCanvas({
       lastCellRef.current = coord;
 
       const colorBefore = stateRef.current.activeColor;
-      const { changed } = extendPath(stateRef.current, coord);
+      const { changed, countMove } = extendPath(stateRef.current, coord);
 
       if (changed && colorBefore) {
-        playConnectTone(pipeColorIndex(colorBefore));
+        if (countMove) {
+          // Pipe completed — play the richer "snap" tone
+          playPipeCompleteTone(pipeColorIndex(colorBefore));
+        } else {
+          // Mid-drag cell step — play the lighter connect tone
+          playConnectTone(pipeColorIndex(colorBefore));
+        }
       }
     };
 

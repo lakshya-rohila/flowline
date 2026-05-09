@@ -1,4 +1,7 @@
 import { useState } from 'react';
+import tutorialConnect from '../assets/game-assets/flowline-tutorial-connect.png';
+import tutorialFill from '../assets/game-assets/flowline-tutorial-fill.png';
+import tutorialHintsUndo from '../assets/game-assets/flowline-tutorial-hints-undo.png';
 
 interface Props {
   open: boolean;
@@ -32,94 +35,22 @@ const STEPS = [
 type VisualType = (typeof STEPS)[number]['visual'];
 
 function StepVisual({ type }: { type: VisualType }) {
-  if (type === 'connect') {
-    return (
-      <div className="ob-visual ob-visual--connect">
-        <div className="ob-grid">
-          {/* 3×3 mini grid showing a path being drawn */}
-          {Array.from({ length: 9 }, (_, i) => {
-            const r = Math.floor(i / 3);
-            const c = i % 3;
-            const isRedDot = (r === 0 && c === 0) || (r === 2 && c === 2);
-            const isBlueDot = (r === 0 && c === 2) || (r === 2 && c === 0);
-            const isRedPath = (r === 0 && c === 1) || (r === 1 && c === 1) || (r === 1 && c === 2);
-            return (
-              <div
-                key={i}
-                className={[
-                  'ob-cell',
-                  isRedDot ? 'ob-cell--red-dot' : '',
-                  isBlueDot ? 'ob-cell--blue-dot' : '',
-                  isRedPath ? 'ob-cell--red-path' : '',
-                ]
-                  .filter(Boolean)
-                  .join(' ')}
-              />
-            );
-          })}
-        </div>
-        <div className="ob-visual-hint">drag to draw</div>
-      </div>
-    );
-  }
+  const src =
+    type === 'connect'
+      ? tutorialConnect
+      : type === 'fill'
+        ? tutorialFill
+        : tutorialHintsUndo;
+  const alt =
+    type === 'connect'
+      ? 'A red pipe connecting two matching dots.'
+      : type === 'fill'
+        ? 'A filled neon puzzle board showing every cell completed.'
+        : 'Hint and undo tutorial graphics.';
 
-  if (type === 'fill') {
-    return (
-      <div className="ob-visual ob-visual--fill">
-        <div className="ob-grid">
-          {/* 3×3 fully filled */}
-          {Array.from({ length: 9 }, (_, i) => {
-            const r = Math.floor(i / 3);
-            const c = i % 3;
-            const colors: Record<string, string> = {
-              '0,0': 'red',
-              '0,1': 'red',
-              '0,2': 'yellow',
-              '1,0': 'red',
-              '1,1': 'yellow',
-              '1,2': 'yellow',
-              '2,0': 'red',
-              '2,1': 'yellow',
-              '2,2': 'yellow',
-            };
-            const isDotRed = (r === 0 && c === 0) || (r === 2 && c === 0);
-            const isDotYellow = (r === 0 && c === 2) || (r === 2 && c === 2);
-            const color = colors[`${r},${c}`];
-            return (
-              <div
-                key={i}
-                className={[
-                  'ob-cell',
-                  'ob-cell--filled',
-                  color ? `ob-cell--fill-${color}` : '',
-                  isDotRed ? 'ob-cell--dot' : '',
-                  isDotYellow ? 'ob-cell--dot ob-cell--dot-yellow' : '',
-                ]
-                  .filter(Boolean)
-                  .join(' ')}
-              />
-            );
-          })}
-        </div>
-        <div className="ob-visual-hint">every cell must be filled</div>
-      </div>
-    );
-  }
-
-  // tools
   return (
-    <div className="ob-visual ob-visual--tools">
-      <div className="ob-tools-row">
-        <div className="ob-tool-card ob-tool-card--hint">
-          <span className="ob-tool-label">HINT</span>
-          <span className="ob-tool-badge">5</span>
-          <span className="ob-tool-desc">shows next move</span>
-        </div>
-        <div className="ob-tool-card ob-tool-card--undo">
-          <span className="ob-tool-label">UNDO</span>
-          <span className="ob-tool-desc">step back one move</span>
-        </div>
-      </div>
+    <div className={`ob-visual ob-visual--asset ob-visual--${type}`}>
+      <img src={src} alt={alt} className="ob-visual__image" />
     </div>
   );
 }
