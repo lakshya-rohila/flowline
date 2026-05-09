@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import type { CSSProperties } from 'react';
 import {
   STORE_ITEMS, CATEGORIES, CATEGORY_META, EARN_GUIDE,
@@ -12,180 +12,260 @@ import neonPanelUrl from '../assets/game-assets/flowline-neon-bg-panel.png';
 
 // ── Coin icon ─────────────────────────────────────────────────────────────────
 
-function CoinIcon({ size = 16, className = '' }: { size?: number; className?: string }) {
+function CoinIcon({ size = 16 }: { size?: number }) {
   return (
-    <svg
-      width={size} height={size}
-      viewBox="0 0 20 20" fill="none"
-      className={className}
-      aria-hidden
-    >
-      <circle cx="10" cy="10" r="9" fill="#FFD700" stroke="#B8860B" strokeWidth="1.2"/>
-      <text x="10" y="14" textAnchor="middle" fontSize="10" fontWeight="700" fill="#7B5200">₣</text>
+    <svg width={size} height={size} viewBox="0 0 22 22" fill="none" aria-hidden>
+      <circle cx="11" cy="11" r="10" fill="url(#cg)" stroke="#B8860B" strokeWidth="1.2"/>
+      <defs>
+        <radialGradient id="cg" cx="35%" cy="30%" r="70%">
+          <stop offset="0%" stopColor="#FFE566"/>
+          <stop offset="100%" stopColor="#E6A800"/>
+        </radialGradient>
+      </defs>
+      <text x="11" y="15.5" textAnchor="middle" fontSize="11" fontWeight="800" fill="#7B4800">₣</text>
     </svg>
   );
 }
 
-// ── Purchase result toast ─────────────────────────────────────────────────────
+// ── Toast ─────────────────────────────────────────────────────────────────────
 
 interface ToastState { msg: string; ok: boolean; id: number }
 
-// ── Item card ─────────────────────────────────────────────────────────────────
-
-interface ItemCardProps {
-  item: StoreItem;
-  coins: number;
-  onBuy: (item: StoreItem) => void;
-}
-
-function ItemCard({ item, coins, onBuy }: ItemCardProps) {
-  const owned    = item.isFree || isOwned(item.id);
-  const equipped = !item.isConsumable && getEquippedItem(item.category) === item.id;
-  const canAfford = coins >= item.price;
-
-  let actionLabel: string;
-  let actionClass: string;
-  if (item.isFree && !item.isConsumable) {
-    actionLabel = equipped ? 'EQUIPPED' : 'EQUIP';
-    actionClass = equipped ? 'store-card__btn--equipped' : 'store-card__btn--equip';
-  } else if (owned && !item.isConsumable) {
-    actionLabel = equipped ? 'EQUIPPED' : 'EQUIP';
-    actionClass = equipped ? 'store-card__btn--equipped' : 'store-card__btn--equip';
-  } else if (item.isConsumable) {
-    actionLabel = item.isFree ? 'GET FREE' : `${item.price}`;
-    actionClass = canAfford ? 'store-card__btn--buy' : 'store-card__btn--broke';
-  } else {
-    actionLabel = String(item.price);
-    actionClass = canAfford ? 'store-card__btn--buy' : 'store-card__btn--broke';
-  }
-
+function Toast({ toast }: { toast: ToastState }) {
   return (
-    <div
-      className={`store-card ${equipped ? 'store-card--equipped' : ''}`}
-      style={{
-        '--card-accent': item.preview.accent,
-        '--card-g1': item.preview.gradient[0],
-        '--card-g2': item.preview.gradient[1],
-      } as CSSProperties}
-    >
-      {/* Badge */}
-      {item.badge && <span className="store-card__badge">{item.badge}</span>}
-
-      {/* Emoji preview */}
-      <div className="store-card__emoji" aria-hidden>{item.preview.emoji}</div>
-
-      {/* Text */}
-      <div className="store-card__body">
-        <p className="store-card__name">{item.name}</p>
-        <p className="store-card__desc">{item.description}</p>
-        {item.isConsumable && item.quantity && item.quantity < 999 && (
-          <p className="store-card__qty">× {item.quantity}</p>
-        )}
-      </div>
-
-      {/* Action button */}
-      <button
-        type="button"
-        className={`store-card__btn ${actionClass}`}
-        onClick={() => onBuy(item)}
-        disabled={equipped || (!item.isFree && !item.isConsumable && owned && !equipped ? false : !canAfford && !owned && !item.isFree && item.isConsumable)}
-        aria-label={`${item.name}: ${actionLabel}`}
-      >
-        {!item.isFree && !owned && !item.isConsumable ? (
-          <span className="store-card__btn-inner">
-            <CoinIcon size={13} />
-            {actionLabel}
-          </span>
-        ) : item.isConsumable && !item.isFree ? (
-          <span className="store-card__btn-inner">
-            <CoinIcon size={13} />
-            {actionLabel}
-          </span>
-        ) : (
-          actionLabel
-        )}
-      </button>
+    <div className={`st-toast ${toast.ok ? 'st-toast--ok' : 'st-toast--err'}`} role="status" aria-live="polite">
+      <span className="st-toast-icon">{toast.ok ? '✓' : '✗'}</span>
+      <span>{toast.msg}</span>
     </div>
   );
 }
 
-// ── Earn guide sheet ──────────────────────────────────────────────────────────
+// ── Item card ─────────────────────────────────────────────────────────────────
+
+function ItemCard({
+  item, coins, onBuy,
+}: { item: StoreItem; coins: number; onBuy: (item: StoreItem) => void }) {
+  const owned    = item.isFree || isOwned(item.id);
+  const equipped = !item.isConsumable && getEquippedItem(item.category) === item.id;
+  const canAfford = coins >= item.price;
+
+  // Button state
+  let btnLabel: string;
+  let btnVariant: 'equipped' | 'equip' | 'buy' | 'locked' | 'free';
+  if (item.isFree && !item.isConsumable) {
+    btnLabel   = equipped ? 'EQUIPPED' : 'EQUIP';
+    btnVariant = equipped ? 'equipped' : 'equip';
+  } else if (owned && !item.isConsumable) {
+    btnLabel   = equipped ? 'EQUIPPED' : 'EQUIP';
+    btnVariant = equipped ? 'equipped' : 'equip';
+  } else if (item.isFree && item.isConsumable) {
+    btnLabel   = 'GET FREE';
+    btnVariant = 'free';
+  } else {
+    btnLabel   = canAfford ? `${item.price}` : `${item.price}`;
+    btnVariant = canAfford ? 'buy' : 'locked';
+  }
+
+  return (
+    <button
+      type="button"
+      className={`st-card ${equipped ? 'st-card--equipped' : ''} ${!canAfford && !owned && !item.isFree ? 'st-card--locked' : ''}`}
+      style={{
+        '--ca': item.preview.accent,
+        '--cg1': item.preview.gradient[0],
+        '--cg2': item.preview.gradient[1],
+      } as CSSProperties}
+      onClick={() => onBuy(item)}
+      aria-label={`${item.name} — ${btnLabel}`}
+    >
+      {/* Badge chip */}
+      {item.badge && <span className="st-card-badge">{item.badge}</span>}
+
+      {/* Equipped check */}
+      {equipped && (
+        <span className="st-card-check" aria-hidden>
+          <svg viewBox="0 0 16 16" fill="none" width="14" height="14">
+            <circle cx="8" cy="8" r="7" fill="rgba(46,204,113,0.2)" stroke="#2ECC71" strokeWidth="1.4"/>
+            <path d="M5 8l2.5 2.5L11 5.5" stroke="#2ECC71" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </span>
+      )}
+
+      {/* Preview area */}
+      <div className="st-card-preview" aria-hidden>
+        <span className="st-card-emoji">{item.preview.emoji}</span>
+        {/* Mini accent dots decoration */}
+        <div className="st-card-dots" aria-hidden>
+          {[...Array(3)].map((_, i) => (
+            <span key={i} className="st-card-dot" style={{ opacity: 0.3 + i * 0.25 }} />
+          ))}
+        </div>
+      </div>
+
+      {/* Info */}
+      <div className="st-card-info">
+        <p className="st-card-name">{item.name}</p>
+        <p className="st-card-desc">{item.description}</p>
+        {item.isConsumable && item.quantity && item.quantity < 999 && (
+          <p className="st-card-qty">× {item.quantity} uses</p>
+        )}
+      </div>
+
+      {/* Action pill */}
+      <div className={`st-card-action st-card-action--${btnVariant}`}>
+        {(btnVariant === 'buy' || btnVariant === 'locked') && (
+          <CoinIcon size={12} />
+        )}
+        <span>{btnLabel}</span>
+        {btnVariant === 'locked' && (
+          <svg viewBox="0 0 12 12" fill="none" width="10" height="10" aria-hidden>
+            <rect x="2" y="5" width="8" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.2"/>
+            <path d="M4 5V3.5a2 2 0 1 1 4 0V5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+          </svg>
+        )}
+      </div>
+    </button>
+  );
+}
+
+// ── Earn guide bottom sheet ───────────────────────────────────────────────────
 
 function EarnGuide({ onClose }: { onClose: () => void }) {
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const r = requestAnimationFrame(() => setVisible(true));
+    return () => cancelAnimationFrame(r);
+  }, []);
+
+  const close = () => { setVisible(false); setTimeout(onClose, 380); };
+
   return (
-    <div className="store-earn-backdrop" onClick={onClose}>
-      <div className="store-earn-sheet" onClick={(e) => e.stopPropagation()}>
-        <div className="store-earn-handle" aria-hidden />
-        <h3 className="store-earn-title">How to Earn Coins</h3>
-        <div className="store-earn-rows">
+    <>
+      <div className={`st-sheet-bg ${visible ? 'st-sheet-bg--in' : ''}`} onClick={close} />
+      <div className={`st-sheet st-earn-sheet ${visible ? 'st-sheet--in' : ''}`}>
+        <div className="st-sheet-handle" aria-hidden />
+        <h3 className="st-sheet-title">
+          <CoinIcon size={22} />
+          How to Earn Coins
+        </h3>
+        <div className="st-earn-rows">
           {EARN_GUIDE.map((g) => (
-            <div key={g.label} className="store-earn-row">
-              <span className="store-earn-emoji">{g.emoji}</span>
-              <span className="store-earn-label">{g.label}</span>
-              <span className="store-earn-coins">
+            <div key={g.label} className="st-earn-row">
+              <span className="st-earn-emoji">{g.emoji}</span>
+              <span className="st-earn-label">{g.label}</span>
+              <span className="st-earn-amount">
                 {typeof g.coins === 'number' ? (
-                  <span className="store-earn-coin-val">
-                    <CoinIcon size={12} /> +{g.coins}
-                  </span>
+                  <><CoinIcon size={12} /> +{g.coins}</>
                 ) : (
-                  <span className="store-earn-coin-val store-earn-coin-val--bonus">{g.coins}</span>
+                  <span className="st-earn-bonus">{g.coins}</span>
                 )}
               </span>
             </div>
           ))}
         </div>
-        <button type="button" className="store-earn-close" onClick={onClose}>GOT IT</button>
+        <button type="button" className="st-sheet-cta" onClick={close}>GOT IT</button>
       </div>
-    </div>
+    </>
   );
 }
 
 // ── Confirm purchase sheet ────────────────────────────────────────────────────
 
 function ConfirmSheet({
-  item,
-  coins,
-  onConfirm,
-  onCancel,
-}: {
-  item: StoreItem;
-  coins: number;
-  onConfirm: () => void;
-  onCancel: () => void;
-}) {
+  item, coins, onConfirm, onCancel,
+}: { item: StoreItem; coins: number; onConfirm: () => void; onCancel: () => void }) {
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const r = requestAnimationFrame(() => setVisible(true));
+    return () => cancelAnimationFrame(r);
+  }, []);
+
   const canAfford = coins >= item.price;
+  const close = () => { setVisible(false); setTimeout(onCancel, 380); };
+
   return (
-    <div className="store-confirm-backdrop" onClick={onCancel}>
-      <div className="store-confirm-sheet" onClick={(e) => e.stopPropagation()}>
-        <div className="store-earn-handle" aria-hidden />
-        <div className="store-confirm-emoji">{item.preview.emoji}</div>
-        <h3 className="store-confirm-name">{item.name}</h3>
-        <p className="store-confirm-desc">{item.description}</p>
+    <>
+      <div className={`st-sheet-bg ${visible ? 'st-sheet-bg--in' : ''}`} onClick={close} />
+      <div
+        className={`st-sheet st-confirm-sheet ${visible ? 'st-sheet--in' : ''}`}
+        style={{ '--ca': item.preview.accent } as CSSProperties}
+      >
+        <div className="st-sheet-handle" aria-hidden />
 
-        <div className="store-confirm-price">
-          <CoinIcon size={20} />
-          <span>{item.price} coins</span>
+        {/* Item preview */}
+        <div className="st-confirm-preview" aria-hidden>
+          <span className="st-confirm-emoji">{item.preview.emoji}</span>
         </div>
 
-        <div className="store-confirm-balance">
-          Your balance: <CoinIcon size={13} /> <strong>{coins}</strong>
-          {!canAfford && <span className="store-confirm-short"> (short by {item.price - coins})</span>}
+        <h3 className="st-confirm-name">{item.name}</h3>
+        <p className="st-confirm-desc">{item.description}</p>
+
+        {/* Price */}
+        <div className="st-confirm-price-row">
+          <CoinIcon size={24} />
+          <span className="st-confirm-price-val">{item.price}</span>
+          <span className="st-confirm-price-label">coins</span>
         </div>
 
-        <div className="store-confirm-actions">
+        {/* Balance */}
+        <div className={`st-confirm-balance ${!canAfford ? 'st-confirm-balance--short' : ''}`}>
+          <span>Your balance:</span>
+          <span className="st-confirm-bal-val">
+            <CoinIcon size={13} /> {coins}
+          </span>
+          {!canAfford && (
+            <span className="st-confirm-short-badge">
+              short by {item.price - coins}
+            </span>
+          )}
+        </div>
+
+        {/* Actions */}
+        <div className="st-confirm-actions">
           <button
             type="button"
-            className="store-confirm-btn store-confirm-btn--primary"
-            onClick={onConfirm}
+            className={`st-confirm-btn st-confirm-btn--primary ${!canAfford ? 'st-confirm-btn--disabled' : ''}`}
+            onClick={canAfford ? onConfirm : undefined}
             disabled={!canAfford}
           >
-            {canAfford ? 'CONFIRM PURCHASE' : 'NOT ENOUGH COINS'}
+            {canAfford ? (
+              <><CoinIcon size={16} /> CONFIRM — {item.price} coins</>
+            ) : (
+              <>NOT ENOUGH COINS</>
+            )}
           </button>
-          <button type="button" className="store-confirm-btn store-confirm-btn--ghost" onClick={onCancel}>
+          <button type="button" className="st-confirm-btn st-confirm-btn--ghost" onClick={close}>
             CANCEL
           </button>
         </div>
       </div>
+    </>
+  );
+}
+
+// ── Coin balance hero widget ──────────────────────────────────────────────────
+
+function CoinHero({ coins, onEarnGuide }: { coins: number; onEarnGuide: () => void }) {
+  const prevRef = useRef(coins);
+  const [bump, setBump] = useState(false);
+  useEffect(() => {
+    if (coins !== prevRef.current) {
+      setBump(true);
+      prevRef.current = coins;
+      setTimeout(() => setBump(false), 500);
+    }
+  }, [coins]);
+
+  return (
+    <div className="st-coin-hero">
+      <div className={`st-coin-hero-amount ${bump ? 'st-coin-hero-amount--bump' : ''}`}>
+        <CoinIcon size={32} />
+        <span className="st-coin-hero-num">{coins.toLocaleString()}</span>
+      </div>
+      <p className="st-coin-hero-label">Your Coins</p>
+      <button type="button" className="st-coin-hero-earn" onClick={onEarnGuide}>
+        How to earn more →
+      </button>
     </div>
   );
 }
@@ -202,7 +282,6 @@ export function StoreScreen({ onClose }: StoreScreenProps) {
   const [toast, setToast] = useState<ToastState | null>(null);
   const [confirmItem, setConfirmItem] = useState<StoreItem | null>(null);
   const [showEarnGuide, setShowEarnGuide] = useState(false);
-  // Force re-render when ownership/equip changes
   const [, forceUpdate] = useState(0);
 
   const showToast = useCallback((msg: string, ok: boolean) => {
@@ -212,7 +291,6 @@ export function StoreScreen({ onClose }: StoreScreenProps) {
   }, []);
 
   const handleBuy = useCallback((item: StoreItem) => {
-    // Free items or equip actions — no confirm needed
     if (item.isFree || isOwned(item.id)) {
       if (!item.isConsumable) {
         equip(item.category, item.id);
@@ -221,135 +299,110 @@ export function StoreScreen({ onClose }: StoreScreenProps) {
       }
       return;
     }
-    // Consumables and purchases: show confirm sheet
     setConfirmItem(item);
   }, [showToast]);
 
   const handleConfirmPurchase = useCallback(() => {
     if (!confirmItem) return;
     setConfirmItem(null);
-
     if (confirmItem.isFree) {
       if (!confirmItem.isConsumable) equip(confirmItem.category, confirmItem.id);
       forceUpdate((n) => n + 1);
       showToast(`${confirmItem.name} activated!`, true);
       return;
     }
-
     const ok = spendCoins(confirmItem.price);
-    if (!ok) {
-      showToast('Not enough coins!', false);
-      return;
-    }
-
-    const newBal = getCoins();
-    setCoins(newBal);
-
+    if (!ok) { showToast('Not enough coins!', false); return; }
+    setCoins(getCoins());
     if (!confirmItem.isConsumable) {
       addOwnedItem(confirmItem.id);
       equip(confirmItem.category, confirmItem.id);
     }
     forceUpdate((n) => n + 1);
-
-    if (confirmItem.isConsumable) {
-      showToast(`+${confirmItem.quantity} ${confirmItem.name} added!`, true);
-    } else {
-      showToast(`${confirmItem.name} purchased & equipped!`, true);
-    }
+    showToast(
+      confirmItem.isConsumable
+        ? `+${confirmItem.quantity} ${confirmItem.name} added!`
+        : `${confirmItem.name} purchased & equipped!`,
+      true,
+    );
   }, [confirmItem, showToast]);
 
   const items = STORE_ITEMS.filter((i) => i.category === activeCategory);
+  const activeMeta = CATEGORY_META[activeCategory];
 
   return (
     <div
-      className="store-root"
-      style={{ '--store-panel': `url(${neonPanelUrl})` } as CSSProperties}
+      className="st-root"
+      style={{ '--st-panel': `url(${neonPanelUrl})` } as CSSProperties}
     >
-      {/* ── Header ── */}
-      <header className="store-header">
-        <button type="button" className="store-back-btn" onClick={onClose} aria-label="Back">
+      {/* ── Topbar ── */}
+      <header className="st-topbar">
+        <button type="button" className="st-back" onClick={onClose} aria-label="Back">
           <svg viewBox="0 0 20 20" fill="none" width="20" height="20" aria-hidden>
-            <path d="M12 4L5 10l7 6" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M13 4L6 10l7 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </button>
 
-        <div className="store-brand">
-          <img src={logoMarkUrl} alt="" className="store-brand-mark" aria-hidden />
-          <span className="store-brand-name">STORE</span>
+        <div className="st-brand">
+          <img src={logoMarkUrl} alt="" className="st-brand-mark" aria-hidden />
+          <span className="st-brand-name">STORE</span>
         </div>
 
-        {/* Coin balance */}
         <button
           type="button"
-          className="store-coin-display"
+          className="st-coin-pill"
           onClick={() => setShowEarnGuide(true)}
-          aria-label={`${coins} coins — tap to learn how to earn`}
+          aria-label={`${coins} coins`}
         >
-          <CoinIcon size={18} />
-          <span className="store-coin-count">{coins.toLocaleString()}</span>
-          <svg viewBox="0 0 16 16" fill="none" width="12" height="12" aria-hidden className="store-coin-info">
-            <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.3"/>
-            <path d="M8 7v5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-            <circle cx="8" cy="5" r="0.7" fill="currentColor"/>
-          </svg>
+          <CoinIcon size={16} />
+          <span>{coins.toLocaleString()}</span>
         </button>
       </header>
 
-      {/* ── Hero banner ── */}
-      <div className="store-hero">
-        <div className="store-hero-left">
-          <p className="store-hero-eyebrow">FLOWLINE STORE</p>
-          <h2 className="store-hero-title">Spend Your Coins</h2>
-          <p className="store-hero-sub">Earn coins by solving levels. Spend them here.</p>
-        </div>
-        <button
-          type="button"
-          className="store-earn-btn"
-          onClick={() => setShowEarnGuide(true)}
-          aria-label="How to earn coins"
-        >
-          <CoinIcon size={24} />
-          <span className="store-earn-btn-label">HOW TO<br/>EARN</span>
-        </button>
-      </div>
+      {/* ── Coin hero ── */}
+      <CoinHero coins={coins} onEarnGuide={() => setShowEarnGuide(true)} />
 
       {/* ── Category tabs ── */}
-      <nav className="store-tabs" role="tablist" aria-label="Store categories">
+      <nav className="st-tabs" role="tablist" aria-label="Store categories">
         {CATEGORIES.map((cat) => {
-          const meta = CATEGORY_META[cat];
+          const m = CATEGORY_META[cat];
+          const active = cat === activeCategory;
           return (
             <button
               key={cat}
               type="button"
               role="tab"
-              aria-selected={activeCategory === cat}
-              className={`store-tab ${activeCategory === cat ? 'store-tab--active' : ''}`}
-              style={{ '--tab-accent': meta.accent } as CSSProperties}
+              aria-selected={active}
+              className={`st-tab ${active ? 'st-tab--active' : ''}`}
+              style={{ '--ta': m.accent } as CSSProperties}
               onClick={() => setActiveCategory(cat)}
             >
-              <span className="store-tab-emoji">{meta.emoji}</span>
-              {meta.label}
+              <span className="st-tab-em">{m.emoji}</span>
+              <span className="st-tab-label">{m.label}</span>
             </button>
           );
         })}
       </nav>
 
+      {/* ── Category heading ── */}
+      <div
+        className="st-cat-head"
+        style={{ '--ca': activeMeta.accent } as CSSProperties}
+      >
+        <span className="st-cat-em">{activeMeta.emoji}</span>
+        <span className="st-cat-name">{activeMeta.label}</span>
+        <span className="st-cat-count">{items.length} items</span>
+      </div>
+
       {/* ── Item grid ── */}
-      <div className="store-grid" role="list">
+      <div className="st-grid">
         {items.map((item) => (
-          <div key={item.id} role="listitem">
-            <ItemCard item={item} coins={coins} onBuy={handleBuy} />
-          </div>
+          <ItemCard key={item.id} item={item} coins={coins} onBuy={handleBuy} />
         ))}
       </div>
 
       {/* ── Toast ── */}
-      {toast && (
-        <div className={`store-toast ${toast.ok ? 'store-toast--ok' : 'store-toast--err'}`} role="status">
-          <span>{toast.ok ? '✓' : '✗'}</span>
-          {toast.msg}
-        </div>
-      )}
+      {toast && <Toast toast={toast} />}
 
       {/* ── Confirm sheet ── */}
       {confirmItem && (
