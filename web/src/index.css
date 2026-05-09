@@ -1,0 +1,41 @@
+:root {
+  color-scheme: dark;
+  --bg: #07070c;
+  --surface: #0b0b12;
+  --surface-2: #101018;
+  --stroke: #1c1c2a;
+  --text: #f4f4f8;
+  --muted: #6b7280;
+  --accent: #5eead4;
+  --accent-2: #2dd4bf;
+  --win: #2ecc71;
+  --sans: 'Outfit', system-ui, sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  -webkit-tap-highlight-color: transparent;
+}
+
+#root {
+  height: 100%;
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+button {
+  font: inherit;
+}
